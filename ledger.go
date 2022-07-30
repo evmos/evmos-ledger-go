@@ -15,11 +15,8 @@ import (
 	apitypes "github.com/ethereum/go-ethereum/signer/core/apitypes"
 	ethLedger "github.com/evmos/ethereum-ledger-go"
 	"github.com/evmos/ethereum-ledger-go/accounts"
-	"github.com/evmos/ethermint/encoding"
 	"github.com/evmos/ethermint/ethereum/eip712"
 	"github.com/evmos/ethermint/types"
-
-	app "github.com/evmos/evmos/v6/app"
 )
 
 type SECP256K1 interface {
@@ -34,8 +31,11 @@ type SECP256K1 interface {
 
 type EvmosSECP256K1 struct {
 	ledger        ethLedger.EthereumLedger
+	config        params.EncodingConfig
 	primaryWallet *accounts.Wallet // This represents the first hardware wallet detected
 }
+
+type LedgerDerivation func() (SECP256K1, error)
 
 // Closes the associated primary wallet. Any requests on
 // the object after a successful Close() should not work
@@ -110,8 +110,8 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 	}
 
 	// Attempt to decode as both Amino and Protobuf to see which format it's in
-	typedDataAmino, errAmino := decodeAminoSignDoc(signDocBytes)
-	typedDataProtobuf, errProtobuf := decodeProtobufSignDoc(signDocBytes)
+	typedDataAmino, errAmino := e.decodeAminoSignDoc(signDocBytes)
+	typedDataProtobuf, errProtobuf := e.decodeProtobufSignDoc(signDocBytes)
 
 	if errAmino == nil {
 		typedData = typedDataAmino
@@ -131,17 +131,24 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 	return signature, nil
 }
 
-func FindEthereumUserLedgerApp() (SECP256K1, error) {
+func EvmosLedgerDerivation(config params.EncodingConfig) LedgerDerivation {
 	evmosSECP256K1 := new(EvmosSECP256K1)
+	evmosSECP256K1.config = config
 
+	return func() (SECP256K1, error) {
+		return evmosSECP256K1.connectToLedgerApp()
+	}
+}
+
+func (e EvmosSECP256K1) connectToLedgerApp() (SECP256K1, error) {
 	// Instantiate new Ledger object
 	ledger, err := ethLedger.New()
 	if err != nil {
 		return nil, err
 	}
 
-	evmosSECP256K1.ledger = *ledger
-	wallets := evmosSECP256K1.ledger.Wallets()
+	e.ledger = *ledger
+	wallets := e.ledger.Wallets()
 
 	// No wallets detected; throw an error
 	if len(wallets) == 0 {
@@ -155,36 +162,28 @@ func FindEthereumUserLedgerApp() (SECP256K1, error) {
 		return nil, err
 	}
 
-	evmosSECP256K1.primaryWallet = &primaryWallet
+	e.primaryWallet = &primaryWallet
 
-	return evmosSECP256K1, nil
+	return e, nil
 }
 
-func evmosConfig() params.EncodingConfig {
-	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
-	return encodingConfig
-	// registry := codectypes.NewInterfaceRegistry()
-	// types.RegisterInterfaces(registry)
-	// return codec.NewProtoCodec(registry)
+func (e EvmosSECP256K1) evmosProtoDecoder() codec.ProtoCodecMarshaler {
+	return codec.NewProtoCodec(e.config.InterfaceRegistry)
 }
 
-func evmosProtoDecoder() codec.ProtoCodecMarshaler {
-	return codec.NewProtoCodec(evmosConfig().InterfaceRegistry)
+func (e EvmosSECP256K1) evmosAminoDecoder() *codec.LegacyAmino {
+	return e.config.Amino
 }
 
-func evmosAminoDecoder() *codec.LegacyAmino {
-	return evmosConfig().Amino
-}
-
-func decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
+func (e EvmosSECP256K1) decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	var (
 		aminoDoc legacytx.StdSignDoc
 		err      error
 	)
 
 	// Initialize amino codec with Evmos registrations
-	aminoCodec := evmosAminoDecoder()
-	protoDecoder := evmosProtoDecoder()
+	aminoCodec := e.evmosAminoDecoder()
+	protoDecoder := e.evmosProtoDecoder()
 
 	err = aminoCodec.UnmarshalJSON(signDocBytes, &aminoDoc)
 	if err != nil {
@@ -240,9 +239,9 @@ func decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	return typedData, nil
 }
 
-func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
+func (e EvmosSECP256K1) decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	// Init decoder
-	protoDecoder := evmosProtoDecoder()
+	protoDecoder := e.evmosProtoDecoder()
 
 	// Decode sign doc
 	signDoc := &txTypes.SignDoc{}

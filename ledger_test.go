@@ -6,9 +6,11 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/cosmos/cosmos-sdk/types"
 	txTypes "github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
@@ -17,6 +19,29 @@ import (
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"github.com/evmos/ethereum-ledger-go/accounts"
 )
+
+func testConfig() params.EncodingConfig {
+	config := &params.EncodingConfig{}
+	// Init Amino
+	amino := codec.NewLegacyAmino()
+	amino.RegisterInterface((*types.Msg)(nil), nil)
+	amino.RegisterConcrete(&bankTypes.MsgSend{}, "cosmos-sdk/MsgSend", nil)
+	// Init Protobuf
+	registry := codecTypes.NewInterfaceRegistry()
+	registry.RegisterImplementations((*types.Msg)(nil), &bankTypes.MsgSend{})
+
+	config.InterfaceRegistry = registry
+	config.Amino = amino
+
+	return *config
+}
+
+func newEvmosSecpWithTestConfig() *EvmosSECP256K1 {
+	config := testConfig()
+	e := new(EvmosSECP256K1)
+	e.config = config
+	return e
+}
 
 func newPubKey(pk string) (res cryptoTypes.PubKey) {
 	pkBytes, err := hex.DecodeString(pk)
@@ -31,20 +56,19 @@ func newPubKey(pk string) (res cryptoTypes.PubKey) {
 
 func getFakeTxAmino() []byte {
 	tmp := fmt.Sprintf(
-		`{"account_number":"0","chain_id":"evmos_9000-1","fee":{"amount":[{"amount":"150","denom":"atom"}],"gas":"20000"},"memo":"memo","msgs":[{"type":"cosmos-sdk/MsgSend","value":{"amount":[{"amount":"150","denom":"atom"}],"from_address":"evmos1xqnm0wf0rmntujjmpsz8nr28324qqyzy5k02u0","to_address":"evmos1rn7fmq6he0s4uz9mwzzqwwm7fmmepd39cusn0t"}}],"sequence":"6"}`,
+		`{"account_number":"0","chain_id":"evmos_9000-1","fee":{"amount":[{"amount":"150","denom":"atom"}],"gas":"20000"},"memo":"memo","msgs":[{"type":"cosmos-sdk/MsgSend","value":{"amount":[{"amount":"150","denom":"atom"}],"from_address":"cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp","to_address":"cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a"}}],"sequence":"6"}`,
 	)
 
 	return []byte(tmp)
 }
 
 func getFakeTxProtobuf(t *testing.T) []byte {
-	// marshaler := codec.NewProtoCodec(codecTypes.NewInterfaceRegistry())
-	marshaler := evmosProtoDecoder()
+	marshaler := codec.NewProtoCodec(codecTypes.NewInterfaceRegistry())
 
 	memo := "memo"
 	msg := bankTypes.NewMsgSend(
-		types.MustAccAddressFromBech32("evmos1xqnm0wf0rmntujjmpsz8nr28324qqyzy5k02u0"),
-		types.MustAccAddressFromBech32("evmos1rn7fmq6he0s4uz9mwzzqwwm7fmmepd39cusn0t"),
+		types.MustAccAddressFromBech32("cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp"),
+		types.MustAccAddressFromBech32("cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a"),
 		[]types.Coin{
 			{
 				Denom:  "atom",
@@ -149,8 +173,8 @@ func verifyTypedDataFields(t *testing.T, typedData apitypes.TypedData) {
 
 	fee := (typedData.Message["fee"].(map[string]interface{}))
 	feePayer := fee["feePayer"]
-	if feePayer != "evmos1xqnm0wf0rmntujjmpsz8nr28324qqyzy5k02u0" {
-		t.Errorf("Invalid fee payer, expected 'evmos1xqnm0wf0rmntujjmpsz8nr28324qqyzy5k02u0' but got %v\n", feePayer)
+	if feePayer != "cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp" {
+		t.Errorf("Invalid fee payer, expected 'cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp' but got %v\n", feePayer)
 	}
 
 	feeGas := fee["gas"]
@@ -193,18 +217,19 @@ func verifyTypedDataFields(t *testing.T, typedData apitypes.TypedData) {
 	}
 
 	msgFrom := msgVal["from_address"]
-	if msgFrom != "evmos1xqnm0wf0rmntujjmpsz8nr28324qqyzy5k02u0" {
-		t.Errorf("Invalid message from address, expected 'evmos1xqnm0wf0rmntujjmpsz8nr28324qqyzy5k02u0' but got %v\n", msgFrom)
+	if msgFrom != "cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp" {
+		t.Errorf("Invalid message from address, expected 'cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp' but got %v\n", msgFrom)
 	}
 
 	msgTo := msgVal["to_address"]
-	if msgTo != "evmos1rn7fmq6he0s4uz9mwzzqwwm7fmmepd39cusn0t" {
-		t.Errorf("Invalid message to address, expected 'evmos1rn7fmq6he0s4uz9mwzzqwwm7fmmepd39cusn0t' but got %v\n", msgTo)
+	if msgTo != "cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a" {
+		t.Errorf("Invalid message to address, expected 'cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a' but got %v\n", msgTo)
 	}
 }
 
 func TestSanityDecodeBytes(t *testing.T) {
-	typedData, err := decodeAminoSignDoc(getFakeTxAmino())
+	e := newEvmosSecpWithTestConfig()
+	typedData, err := e.decodeAminoSignDoc(getFakeTxAmino())
 
 	if err != nil {
 		panic(fmt.Sprintf("Failed with err %v\n", err))
@@ -214,7 +239,9 @@ func TestSanityDecodeBytes(t *testing.T) {
 }
 
 func TestLedgerAminoSignature(t *testing.T) {
-	wallet, err := FindEthereumUserLedgerApp()
+	deriveLedger := EvmosLedgerDerivation(testConfig())
+	wallet, err := deriveLedger()
+
 	if err != nil {
 		panic(fmt.Sprintf("Could not retrieve wallet with error %v\n", err))
 	}
@@ -228,7 +255,9 @@ func TestLedgerAminoSignature(t *testing.T) {
 }
 
 func TestLedgerProtobufSignature(t *testing.T) {
-	wallet, err := FindEthereumUserLedgerApp()
+	deriveLedger := EvmosLedgerDerivation(testConfig())
+	wallet, err := deriveLedger()
+
 	if err != nil {
 		panic(fmt.Sprintf("Could not retrieve wallet with error %v\n", err))
 	}
@@ -242,21 +271,26 @@ func TestLedgerProtobufSignature(t *testing.T) {
 }
 
 func TestProtobufDecodesAmino(t *testing.T) {
-	_, err := decodeProtobufSignDoc(getFakeTxAmino())
+	e := newEvmosSecpWithTestConfig()
+	_, err := e.decodeProtobufSignDoc(getFakeTxAmino())
+
 	if err == nil {
 		t.Error("Expected to fail decoding Amino")
 	}
 }
 
 func TestAminoDecodesProtobuf(t *testing.T) {
-	_, err := decodeAminoSignDoc(getFakeTxProtobuf(t))
+	e := newEvmosSecpWithTestConfig()
+	_, err := e.decodeAminoSignDoc(getFakeTxProtobuf(t))
+
 	if err == nil {
 		t.Error("Expected to fail decoding Protobuf")
 	}
 }
 
 func TestProtobufTypedData(t *testing.T) {
-	typedData, err := decodeProtobufSignDoc(getFakeTxProtobuf(t))
+	e := newEvmosSecpWithTestConfig()
+	typedData, err := e.decodeProtobufSignDoc(getFakeTxProtobuf(t))
 	if err != nil {
 		t.Errorf("Did not expect to fail decoding Protobuf SignDoc: %v\n", err)
 	}
@@ -265,7 +299,8 @@ func TestProtobufTypedData(t *testing.T) {
 }
 
 func TestAminoTypedData(t *testing.T) {
-	typedData, err := decodeAminoSignDoc(getFakeTxAmino())
+	e := newEvmosSecpWithTestConfig()
+	typedData, err := e.decodeAminoSignDoc(getFakeTxAmino())
 	if err != nil {
 		t.Errorf("Did not expect to fail decoding Amino SignDoc: %v\n", err)
 	}
@@ -274,12 +309,13 @@ func TestAminoTypedData(t *testing.T) {
 }
 
 func TestTypedDataEquivalence(t *testing.T) {
-	protobufTypedData, err := decodeProtobufSignDoc(getFakeTxProtobuf(t))
+	e := newEvmosSecpWithTestConfig()
+	protobufTypedData, err := e.decodeProtobufSignDoc(getFakeTxProtobuf(t))
 	if err != nil {
 		t.Errorf("Did not expect to fail decoding Amino SignDoc: %v\n", err)
 	}
 
-	aminoTypedData, err := decodeAminoSignDoc(getFakeTxAmino())
+	aminoTypedData, err := e.decodeAminoSignDoc(getFakeTxAmino())
 	if err != nil {
 		t.Errorf("Did not expect to fail decoding Amino SignDoc: %v\n", err)
 	}
@@ -290,7 +326,9 @@ func TestTypedDataEquivalence(t *testing.T) {
 }
 
 func TestPayloadSignaturesEquivalence(t *testing.T) {
-	wallet, err := FindEthereumUserLedgerApp()
+	deriveLedger := EvmosLedgerDerivation(testConfig())
+	wallet, err := deriveLedger()
+
 	if err != nil {
 		t.Errorf("Could not retrieve wallet with error %v\n", err)
 	}
