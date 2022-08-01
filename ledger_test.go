@@ -20,6 +20,9 @@ import (
 	"github.com/evmos/ethereum-ledger-go/accounts"
 )
 
+// Test Mnemonic:
+// glow spread dentist swamp people siren hint muscle first sausage castle metal cycle abandon accident logic again around mix dial knee organ episode usual
+
 func testConfig() params.EncodingConfig {
 	config := &params.EncodingConfig{}
 	// Init Amino
@@ -241,12 +244,13 @@ func TestSanityDecodeBytes(t *testing.T) {
 func TestLedgerAminoSignature(t *testing.T) {
 	deriveLedger := EvmosLedgerDerivation(testConfig())
 	wallet, err := deriveLedger()
+	defer wallet.Close()
 
 	if err != nil {
 		panic(fmt.Sprintf("Could not retrieve wallet with error %v\n", err))
 	}
 
-	signature, err := wallet.SignSECP256K1(accounts.LegacyLedgerBaseDerivationPath, getFakeTxAmino())
+	signature, err := wallet.SignSECP256K1(accounts.DefaultBaseDerivationPath, getFakeTxAmino())
 	if err != nil {
 		panic(fmt.Sprintf("Could not sign bytes with error %v\n", err))
 	}
@@ -257,12 +261,13 @@ func TestLedgerAminoSignature(t *testing.T) {
 func TestLedgerProtobufSignature(t *testing.T) {
 	deriveLedger := EvmosLedgerDerivation(testConfig())
 	wallet, err := deriveLedger()
+	defer wallet.Close()
 
 	if err != nil {
 		panic(fmt.Sprintf("Could not retrieve wallet with error %v\n", err))
 	}
 
-	signature, err := wallet.SignSECP256K1(accounts.LegacyLedgerBaseDerivationPath, getFakeTxProtobuf(t))
+	signature, err := wallet.SignSECP256K1(accounts.DefaultBaseDerivationPath, getFakeTxProtobuf(t))
 	if err != nil {
 		panic(fmt.Sprintf("Could not sign bytes with error %v\n", err))
 	}
@@ -328,22 +333,74 @@ func TestTypedDataEquivalence(t *testing.T) {
 func TestPayloadSignaturesEquivalence(t *testing.T) {
 	deriveLedger := EvmosLedgerDerivation(testConfig())
 	wallet, err := deriveLedger()
+	defer wallet.Close()
 
 	if err != nil {
 		t.Errorf("Could not retrieve wallet with error %v\n", err)
 	}
 
-	protoSignature, err := wallet.SignSECP256K1(accounts.LegacyLedgerBaseDerivationPath, getFakeTxProtobuf(t))
+	protoSignature, err := wallet.SignSECP256K1(accounts.DefaultBaseDerivationPath, getFakeTxProtobuf(t))
 	if err != nil {
 		t.Errorf("Could not sign Protobuf bytes with error %v\n", err)
 	}
 
-	aminoSignature, err := wallet.SignSECP256K1(accounts.LegacyLedgerBaseDerivationPath, getFakeTxAmino())
+	aminoSignature, err := wallet.SignSECP256K1(accounts.DefaultBaseDerivationPath, getFakeTxAmino())
 	if err != nil {
 		t.Errorf("Could not sign Amino bytes with error %v\n", err)
 	}
 
 	if !reflect.DeepEqual(protoSignature, aminoSignature) {
 		t.Errorf("Payload signatures are different, expected the same")
+	}
+}
+
+func TestGetLedgerAddress(t *testing.T) {
+	deriveLedger := EvmosLedgerDerivation(testConfig())
+	wallet, err := deriveLedger()
+	defer wallet.Close()
+
+	if err != nil {
+		t.Errorf("Could not retrieve wallet with error %v\n", err)
+	}
+
+	pubkey, addr, err := wallet.GetAddressPubKeySECP256K1(accounts.DefaultBaseDerivationPath, "evmos")
+
+	if err != nil {
+		t.Errorf("Could not get wallet address with error %v\n", err)
+	}
+
+	t.Logf("Pub Key: %v\n", pubkey)
+	t.Logf("Address: %v\n", addr)
+
+	hex := hex.EncodeToString(pubkey)
+
+	if hex != "5f53cbc346997423fe843e2ee6d24fd7832211000a65975ba81d53c87ad1e5c863a5adb3cb919014903f13a68c9a4682b56ff5df3db888a2cbc3dc8fae1ec0fb" {
+		t.Errorf("Invalid public key (check mnemonic)")
+	}
+
+	if addr != "evmos1hnmrdr0jc2ve3ycxft0gcjjtrdkncpmmkeamf9" {
+		t.Errorf("Invalid address (check mnemonic)")
+	}
+}
+
+func TestGetLedgerPubkey(t *testing.T) {
+	deriveLedger := EvmosLedgerDerivation(testConfig())
+	wallet, err := deriveLedger()
+	defer wallet.Close()
+
+	if err != nil {
+		t.Errorf("Could not retrieve wallet with error %v\n", err)
+	}
+
+	pubkey, err := wallet.GetPublicKeySECP256K1(accounts.DefaultBaseDerivationPath)
+
+	if err != nil {
+		t.Errorf("Could not get wallet address with error %v\n", err)
+	}
+
+	hex := hex.EncodeToString(pubkey)
+
+	if hex != "5f53cbc346997423fe843e2ee6d24fd7832211000a65975ba81d53c87ad1e5c863a5adb3cb919014903f13a68c9a4682b56ff5df3db888a2cbc3dc8fae1ec0fb" {
+		t.Errorf("Invalid public key (check mnemonic)")
 	}
 }

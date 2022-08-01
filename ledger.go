@@ -73,15 +73,20 @@ func (e EvmosSECP256K1) GetAddressPubKeySECP256K1(hdPath []uint32, hrp string) (
 	}
 
 	var (
-		account accounts.Account
-		err     error
+		account            accounts.Account
+		bech32AddressBytes []byte
+		err                error
 	)
 
 	if account, err = (*e.primaryWallet).Derive(hdPath, true); err != nil {
 		return make([]byte, 0), "", err
 	}
 
-	address, err := bech32.Encode(hrp, account.Address.Bytes())
+	if bech32AddressBytes, err = bech32.ConvertBits(account.Address.Bytes(), 8, 5, true); err != nil {
+		return make([]byte, 0), "", err
+	}
+
+	address, err := bech32.Encode(hrp, bech32AddressBytes)
 	if err != nil {
 		return make([]byte, 0), "", err
 	}
