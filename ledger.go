@@ -54,6 +54,9 @@ func (e EvmosSECP256K1) GetPublicKeySECP256K1(hdPath []uint32) ([]byte, error) {
 		return make([]byte, 0), errors.New("Struct has no connected wallet.")
 	}
 
+	// Re-open wallet in case it was closed
+	_ = (*e.primaryWallet).Open("")
+
 	var (
 		account accounts.Account
 		err     error
@@ -71,6 +74,9 @@ func (e EvmosSECP256K1) GetAddressPubKeySECP256K1(hdPath []uint32, hrp string) (
 	if e.primaryWallet == nil {
 		return make([]byte, 0), "", errors.New("Struct has no connected wallet.")
 	}
+
+	// Re-open wallet in case it was closed
+	_ = (*e.primaryWallet).Open("")
 
 	var (
 		account            accounts.Account
@@ -98,6 +104,9 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 	if e.primaryWallet == nil {
 		return make([]byte, 0), errors.New("Struct has no connected wallet.")
 	}
+
+	// Re-open wallet in case it was closed
+	_ = (*e.primaryWallet).Open("")
 
 	var (
 		account   accounts.Account
