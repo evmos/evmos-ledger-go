@@ -320,8 +320,8 @@ github.com/envoyproxy/go-control-plane v0.10.2-0.20220325020618-49ff273808a1/go.
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/ethereum/go-ethereum v1.10.16 h1:3oPrumn0bCW/idjcxMn5YYVCdK7VzJYIvwGZUGLEaoc=
 github.com/ethereum/go-ethereum v1.10.16/go.mod h1:Anj6cxczl+AHy63o4X9O8yWNHuN5wMpfb8MAnHkWn7Y=
-github.com/evmos/ethereum-ledger-go v0.0.3 h1:yDXOxKd3GzbEA5ViIvW2Qt3Pkw5NI5y0zdV2KCAA4bM=
-github.com/evmos/ethereum-ledger-go v0.0.3/go.mod h1:zFdFG8WHR6501sdQEvnTrBHZc4kebpaOK3tWuCZ4YkI=
+github.com/evmos/ethereum-ledger-go v0.1.0 h1:BY4XUckJDqb6QKe9BvtsQq3NAGacotqSbDlYZl8sQU8=
+github.com/evmos/ethereum-ledger-go v0.1.0/go.mod h1:zFdFG8WHR6501sdQEvnTrBHZc4kebpaOK3tWuCZ4YkI=
 github.com/evmos/ethermint v0.17.0 h1:qJNDRGugzF/mdgRyIrle67DkY+M6IZMKj8m+VuWtMdk=
 github.com/evmos/ethermint v0.17.0/go.mod h1:BmXULZy8lbld5KgNE0zM4b7Dy1irPpL6nsDH11SMNzQ=
 github.com/facebookgo/ensure v0.0.0-20160127193407-b4ab57deab51/go.mod h1:Yg+htXGokKKdzcwhuNDwVvN+uBxDGXJ7G/VN1d8fa64=

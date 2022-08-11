@@ -404,3 +404,38 @@ func TestGetLedgerPubkey(t *testing.T) {
 		t.Errorf("Invalid public key (check mnemonic)")
 	}
 }
+
+// Get the address and public key for a different HD Path
+func TestGetAltLedgerAddress(t *testing.T) {
+	deriveLedger := EvmosLedgerDerivation(testConfig())
+	wallet, err := deriveLedger()
+	defer wallet.Close()
+
+	if err != nil {
+		t.Errorf("Could not retrieve wallet with error %v\n", err)
+	}
+
+	path, err := accounts.ParseDerivationPath("m/44'/60'/0'/0/1")
+	if err != nil {
+		panic(fmt.Sprintf("Could not parse derivation path with error: %v\n", err))
+	}
+
+	pubkey, addr, err := wallet.GetAddressPubKeySECP256K1(path, "evmos")
+
+	if err != nil {
+		t.Errorf("Could not get wallet address with error %v\n", err)
+	}
+
+	t.Logf("Pub Key: %v\n", pubkey)
+	t.Logf("Address: %v\n", addr)
+
+	hex := hex.EncodeToString(pubkey)
+
+	if hex != "4a5236e77ab81e094d7c6cfeac06d2e93fec455d01c7f80e22c592a89b44acebe99c2450425a184e5382362d5c52f5d996f12e73ccfb7694227f31b501e36ed7" {
+		t.Errorf("Invalid public key (check mnemonic)")
+	}
+
+	if addr != "evmos12um6vtmgxpwsm9zkf0khnux4x3ldcpswnkqz3s" {
+		t.Errorf("Invalid address (check mnemonic)")
+	}
+}
