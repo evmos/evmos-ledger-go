@@ -7,7 +7,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.45.6
 	github.com/ethereum/go-ethereum v1.10.16
 	github.com/evmos/ethereum-ledger-go v0.1.1
-	github.com/evmos/ethermint v0.17.0
+	github.com/evmos/ethermint v0.18.0
 )
 
 require (
