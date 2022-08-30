@@ -320,8 +320,8 @@ github.com/envoyproxy/go-control-plane v0.10.2-0.20220325020618-49ff273808a1/go.
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/ethereum/go-ethereum v1.10.16 h1:3oPrumn0bCW/idjcxMn5YYVCdK7VzJYIvwGZUGLEaoc=
 github.com/ethereum/go-ethereum v1.10.16/go.mod h1:Anj6cxczl+AHy63o4X9O8yWNHuN5wMpfb8MAnHkWn7Y=
-github.com/evmos/ethereum-ledger-go v0.1.0 h1:BY4XUckJDqb6QKe9BvtsQq3NAGacotqSbDlYZl8sQU8=
-github.com/evmos/ethereum-ledger-go v0.1.0/go.mod h1:zFdFG8WHR6501sdQEvnTrBHZc4kebpaOK3tWuCZ4YkI=
+github.com/evmos/ethereum-ledger-go v0.1.1 h1:EVBidKt1xHjvZ9kIyKFy9/FfLE737OL4ZuyrjnK7GSQ=
+github.com/evmos/ethereum-ledger-go v0.1.1/go.mod h1:azPpikO/CFtDlIfJB2lBcodgtRr6miidSCBI/u+mxzk=
 github.com/evmos/ethermint v0.17.0 h1:qJNDRGugzF/mdgRyIrle67DkY+M6IZMKj8m+VuWtMdk=
 github.com/evmos/ethermint v0.17.0/go.mod h1:BmXULZy8lbld5KgNE0zM4b7Dy1irPpL6nsDH11SMNzQ=
 github.com/facebookgo/ensure v0.0.0-20160127193407-b4ab57deab51/go.mod h1:Yg+htXGokKKdzcwhuNDwVvN+uBxDGXJ7G/VN1d8fa64=
@@ -631,7 +631,6 @@ github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7V
 github.com/julienschmidt/httprouter v1.3.0/go.mod h1:JR6WtHb+2LUe8TCKY3cZOxFyyO8IZAc4RVcycCCAKdM=
 github.com/jung-kurt/gofpdf v1.0.3-0.20190309125859-24315acbbda5/go.mod h1:7Id9E/uU8ce6rXgefFLlgrJj/GYY22cpxn+r32jIOes=
 github.com/jwilder/encoding v0.0.0-20170811194829-b4e1701a28ef/go.mod h1:Ct9fl0F6iIOGgxJ5npU/IUOhOhqlVrGjyIZc8/MagT0=
-github.com/karalabe/usb v0.0.2 h1:M6QQBNxF+CQ8OFvxrT90BA0qBOXymndZnk5q235mFc4=
 github.com/karalabe/usb v0.0.2/go.mod h1:Od972xHfMJowv7NGVDiWVxk2zxnWgjLlJzE+F4F7AGU=
 github.com/keybase/go-keychain v0.0.0-20190712205309-48d3d31d256d h1:Z+RDyXzjKE0i2sTjZ/b1uxiGtPhFy34Ou/Tk0qwN0kM=
 github.com/keybase/go-keychain v0.0.0-20190712205309-48d3d31d256d/go.mod h1:JJNrCn9otv/2QP4D7SMJBgaleKpOf66PnW6F5WGNRIc=

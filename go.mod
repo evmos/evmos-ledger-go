@@ -6,7 +6,7 @@ require (
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.45.6
 	github.com/ethereum/go-ethereum v1.10.16
-	github.com/evmos/ethereum-ledger-go v0.1.0
+	github.com/evmos/ethereum-ledger-go v0.1.1
 	github.com/evmos/ethermint v0.17.0
 )
 
@@ -59,7 +59,6 @@ require (
 	github.com/hdevalence/ed25519consensus v0.0.0-20210204194344-59a8610d2b87 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
-	github.com/karalabe/usb v0.0.2 // indirect
 	github.com/keybase/go-keychain v0.0.0-20190712205309-48d3d31d256d // indirect
 	github.com/libp2p/go-buffer-pool v0.0.2 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect

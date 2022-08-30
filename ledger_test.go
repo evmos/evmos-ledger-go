@@ -374,7 +374,7 @@ func TestGetLedgerAddress(t *testing.T) {
 
 	hex := hex.EncodeToString(pubkey)
 
-	if hex != "5f53cbc346997423fe843e2ee6d24fd7832211000a65975ba81d53c87ad1e5c863a5adb3cb919014903f13a68c9a4682b56ff5df3db888a2cbc3dc8fae1ec0fb" {
+	if hex != "045f53cbc346997423fe843e2ee6d24fd7832211000a65975ba81d53c87ad1e5c863a5adb3cb919014903f13a68c9a4682b56ff5df3db888a2cbc3dc8fae1ec0fb" {
 		t.Errorf("Invalid public key (check mnemonic)")
 	}
 
@@ -400,7 +400,7 @@ func TestGetLedgerPubkey(t *testing.T) {
 
 	hex := hex.EncodeToString(pubkey)
 
-	if hex != "5f53cbc346997423fe843e2ee6d24fd7832211000a65975ba81d53c87ad1e5c863a5adb3cb919014903f13a68c9a4682b56ff5df3db888a2cbc3dc8fae1ec0fb" {
+	if hex != "045f53cbc346997423fe843e2ee6d24fd7832211000a65975ba81d53c87ad1e5c863a5adb3cb919014903f13a68c9a4682b56ff5df3db888a2cbc3dc8fae1ec0fb" {
 		t.Errorf("Invalid public key (check mnemonic)")
 	}
 }
@@ -431,7 +431,7 @@ func TestGetAltLedgerAddress(t *testing.T) {
 
 	hex := hex.EncodeToString(pubkey)
 
-	if hex != "4a5236e77ab81e094d7c6cfeac06d2e93fec455d01c7f80e22c592a89b44acebe99c2450425a184e5382362d5c52f5d996f12e73ccfb7694227f31b501e36ed7" {
+	if hex != "044a5236e77ab81e094d7c6cfeac06d2e93fec455d01c7f80e22c592a89b44acebe99c2450425a184e5382362d5c52f5d996f12e73ccfb7694227f31b501e36ed7" {
 		t.Errorf("Invalid public key (check mnemonic)")
 	}
 
