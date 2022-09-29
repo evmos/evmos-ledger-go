@@ -7,7 +7,7 @@ import (
 	"github.com/btcsuite/btcutil/bech32"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp/params"
-	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
+	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 
 	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
 	txTypes "github.com/cosmos/cosmos-sdk/types/tx"
@@ -321,6 +321,9 @@ func (e EvmosSECP256K1) decodeProtobufSignDoc(signDocBytes []byte) (apitypes.Typ
 		FeePayer: feePayer,
 	}
 
+	// Get tip
+	tip := authInfo.Tip
+
 	// Create Legacy SignBytes (expected type for WrapTxToTypedData)
 	signBytes := legacytx.StdSignBytes(
 		signDoc.ChainId,
@@ -330,6 +333,7 @@ func (e EvmosSECP256K1) decodeProtobufSignDoc(signDocBytes []byte) (apitypes.Typ
 		*stdFee,
 		[]cosmosTypes.Msg{msg},
 		body.Memo,
+		tip,
 	)
 
 	typedData, err := eip712.WrapTxToTypedData(
