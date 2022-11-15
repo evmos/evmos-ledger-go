@@ -163,8 +163,8 @@ func EvmosLedgerDerivation(config params.EncodingConfig) LedgerDerivation {
 	}
 }
 
-// Helper function to display the EIP-712 hash message, so users can verify the message matches that shown
-// on their Ledger
+// Helper function to display the EIP-712 hashes; this allows users to verify the hashed message
+// they are signing via Ledger.
 func (e EvmosSECP256K1) displayEIP712Hash(typedData apitypes.TypedData) error {
 	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
 	if err != nil {
@@ -176,13 +176,13 @@ func (e EvmosSECP256K1) displayEIP712Hash(typedData apitypes.TypedData) error {
 	}
 
 	fmt.Printf("Signing the following payload with EIP-712:\n")
-	fmt.Printf("- Domain: %v\n", formatBytesAsHexString(domainSeparator))
-	fmt.Printf("- Message: %v\n", formatBytesAsHexString(typedDataHash))
+	fmt.Printf("- Domain: %v\n", bytesToHexString(domainSeparator))
+	fmt.Printf("- Message: %v\n", bytesToHexString(typedDataHash))
 
 	return nil
 }
 
-func formatBytesAsHexString(bytes []byte) string {
+func bytesToHexString(bytes []byte) string {
 	return "0x" + strings.ToUpper(hex.EncodeToString(bytes))
 }
 
