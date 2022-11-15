@@ -1,8 +1,10 @@
 package ledger
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/btcsuite/btcutil/bech32"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -101,6 +103,7 @@ func (e EvmosSECP256K1) GetAddressPubKeySECP256K1(hdPath []uint32, hrp string) (
 }
 
 func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]byte, error) {
+	fmt.Printf("Generating payload, please check your Ledger...\n")
 	if e.primaryWallet == nil {
 		return make([]byte, 0), errors.New("Struct has no connected wallet.")
 	}
@@ -135,6 +138,12 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 		return make([]byte, 0), errors.New(fmt.Sprintf("Could not decode sign doc as either Amino or Protobuf.\n Amino: %v\n Protobuf: %v\n", errAmino, errProtobuf))
 	}
 
+	// Display EIP-712 message hash for user to verify
+	err = e.displayEIP712Hash(typedData)
+	if err != nil {
+		return make([]byte, 0), err
+	}
+
 	// Sign with EIP712 signature
 	signature, err := (*e.primaryWallet).SignTypedData(account, typedData)
 	if err != nil {
@@ -152,6 +161,29 @@ func EvmosLedgerDerivation(config params.EncodingConfig) LedgerDerivation {
 	return func() (SECP256K1, error) {
 		return evmosSECP256K1.connectToLedgerApp()
 	}
+}
+
+// Helper function to display the EIP-712 hashes; this allows users to verify the hashed message
+// they are signing via Ledger.
+func (e EvmosSECP256K1) displayEIP712Hash(typedData apitypes.TypedData) error {
+	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
+	if err != nil {
+		return err
+	}
+	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Signing the following payload with EIP-712:\n")
+	fmt.Printf("- Domain: %v\n", bytesToHexString(domainSeparator))
+	fmt.Printf("- Message: %v\n", bytesToHexString(typedDataHash))
+
+	return nil
+}
+
+func bytesToHexString(bytes []byte) string {
+	return "0x" + strings.ToUpper(hex.EncodeToString(bytes))
 }
 
 func (e EvmosSECP256K1) connectToLedgerApp() (SECP256K1, error) {
