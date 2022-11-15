@@ -43,7 +43,7 @@ type LedgerDerivation func() (SECP256K1, error)
 // the object after a successful Close() should not work
 func (e EvmosSECP256K1) Close() error {
 	if e.primaryWallet == nil {
-		return errors.New("Struct had no wallet to close")
+		return errors.New("could not close Ledger: no wallet found")
 	}
 
 	return (*e.primaryWallet).Close()
@@ -53,7 +53,7 @@ func (e EvmosSECP256K1) Close() error {
 // the provided hdPath using the primary wallet
 func (e EvmosSECP256K1) GetPublicKeySECP256K1(hdPath []uint32) ([]byte, error) {
 	if e.primaryWallet == nil {
-		return make([]byte, 0), errors.New("Struct has no connected wallet.")
+		return make([]byte, 0), errors.New("could not get Ledger public key: no wallet found")
 	}
 
 	// Re-open wallet in case it was closed
@@ -65,7 +65,7 @@ func (e EvmosSECP256K1) GetPublicKeySECP256K1(hdPath []uint32) ([]byte, error) {
 	)
 
 	if account, err = (*e.primaryWallet).Derive(hdPath, true); err != nil {
-		return make([]byte, 0), err
+		return make([]byte, 0), errors.New("unable to derive public key, please retry")
 	}
 
 	return account.PublicKey.Bytes(), nil
@@ -74,7 +74,7 @@ func (e EvmosSECP256K1) GetPublicKeySECP256K1(hdPath []uint32) ([]byte, error) {
 // hrp "Human Readable Part" e.g. evmos
 func (e EvmosSECP256K1) GetAddressPubKeySECP256K1(hdPath []uint32, hrp string) ([]byte, string, error) {
 	if e.primaryWallet == nil {
-		return make([]byte, 0), "", errors.New("Struct has no connected wallet.")
+		return make([]byte, 0), "", errors.New("could not get Ledger address: no wallet found")
 	}
 
 	// Re-open wallet in case it was closed
@@ -87,7 +87,7 @@ func (e EvmosSECP256K1) GetAddressPubKeySECP256K1(hdPath []uint32, hrp string) (
 	)
 
 	if account, err = (*e.primaryWallet).Derive(hdPath, true); err != nil {
-		return make([]byte, 0), "", err
+		return make([]byte, 0), "", errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
 	}
 
 	if bech32AddressBytes, err = bech32.ConvertBits(account.Address.Bytes(), 8, 5, true); err != nil {
@@ -104,8 +104,9 @@ func (e EvmosSECP256K1) GetAddressPubKeySECP256K1(hdPath []uint32, hrp string) (
 
 func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]byte, error) {
 	fmt.Printf("Generating payload, please check your Ledger...\n")
+
 	if e.primaryWallet == nil {
-		return make([]byte, 0), errors.New("Struct has no connected wallet.")
+		return make([]byte, 0), errors.New("unable to sign with Ledger: no wallet found")
 	}
 
 	// Re-open wallet in case it was closed
@@ -119,7 +120,7 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 
 	// Derive requested account
 	if account, err = (*e.primaryWallet).Derive(hdPath, true); err != nil {
-		return make([]byte, 0), err
+		return make([]byte, 0), errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
 	}
 
 	if err != nil {
@@ -135,7 +136,7 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 	} else if errProtobuf == nil {
 		typedData = typedDataProtobuf
 	} else {
-		return make([]byte, 0), errors.New(fmt.Sprintf("Could not decode sign doc as either Amino or Protobuf.\n Amino: %v\n Protobuf: %v\n", errAmino, errProtobuf))
+		return make([]byte, 0), fmt.Errorf("could not encode payload as EIP-712 object\n amino: %v\n protobuf: %v", errAmino, errProtobuf)
 	}
 
 	// Display EIP-712 message hash for user to verify
@@ -147,8 +148,7 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 	// Sign with EIP712 signature
 	signature, err := (*e.primaryWallet).SignTypedData(account, typedData)
 	if err != nil {
-		fmt.Printf("Got error with signature %v\n", err)
-		return make([]byte, 0), err
+		return make([]byte, 0), fmt.Errorf("error generating signature, please retry: %v", err)
 	}
 
 	return signature, nil
@@ -198,7 +198,7 @@ func (e EvmosSECP256K1) connectToLedgerApp() (SECP256K1, error) {
 
 	// No wallets detected; throw an error
 	if len(wallets) == 0 {
-		return nil, errors.New("No hardware wallet detected")
+		return nil, errors.New("no hardware wallets detected")
 	}
 
 	// Default to use first wallet found
@@ -244,7 +244,7 @@ func (e EvmosSECP256K1) decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedD
 	}
 
 	if len(aminoDoc.Msgs) != 1 {
-		return apitypes.TypedData{}, errors.New(fmt.Sprintf("Invalid number of messages in SignDoc, expected 1 but got %v\n", len(aminoDoc.Msgs)))
+		return apitypes.TypedData{}, fmt.Errorf("invalid number of messages in SignDoc, expected 1 but got %v", len(aminoDoc.Msgs))
 	}
 
 	var msg cosmosTypes.Msg
@@ -257,7 +257,7 @@ func (e EvmosSECP256K1) decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedD
 	// By default, use first address in list of signers to cover fee
 	// Currently, support only one signer
 	if len(msg.GetSigners()) != 1 {
-		return apitypes.TypedData{}, errors.New("Expected exactly one signer for message")
+		return apitypes.TypedData{}, fmt.Errorf("invalid number of signers, expected 1 got %v", len(msg.GetSigners()))
 	}
 	feePayer := msg.GetSigners()[0]
 	feeDelegation := &eip712.FeeDelegationOptions{
@@ -267,7 +267,7 @@ func (e EvmosSECP256K1) decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedD
 	// Parse ChainID
 	chainID, err := types.ParseChainID(aminoDoc.ChainID)
 	if err != nil {
-		return apitypes.TypedData{}, errors.New("Invalid chain ID passed as argument")
+		return apitypes.TypedData{}, fmt.Errorf("unable to parse chain ID (%v)", chainID)
 	}
 
 	typedData, err := eip712.WrapTxToTypedData(
@@ -279,7 +279,7 @@ func (e EvmosSECP256K1) decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedD
 	)
 
 	if err != nil {
-		return apitypes.TypedData{}, errors.New(fmt.Sprintf("Could not convert to EIP712 representation: %v\n", err))
+		return apitypes.TypedData{}, fmt.Errorf("could not convert to EIP712 object: %v", err)
 	}
 
 	return typedData, nil
@@ -312,17 +312,17 @@ func (e EvmosSECP256K1) decodeProtobufSignDoc(signDocBytes []byte) (apitypes.Typ
 
 	// Until support for these fields is added, throw an error at their presence
 	if body.TimeoutHeight != 0 || len(body.ExtensionOptions) != 0 || len(body.NonCriticalExtensionOptions) != 0 {
-		return apitypes.TypedData{}, errors.New("Body contains unsupported fields: TimeoutHeight, ExtensionOptions, or NonCriticalExtensionOptions")
+		return apitypes.TypedData{}, errors.New("transaction body contains unsupported fields: TimeoutHeight, ExtensionOptions, or NonCriticalExtensionOptions")
 	}
 
 	// Verify single message
 	if len(body.Messages) != 1 {
-		return apitypes.TypedData{}, errors.New(fmt.Sprintf("Invalid number of messages, expected 1 got %v\n", len(body.Messages)))
+		return apitypes.TypedData{}, fmt.Errorf("invalid number of messages, expected 1 got %v", len(body.Messages))
 	}
 
 	// Verify single signature (single signer for now)
 	if len(authInfo.SignerInfos) != 1 {
-		return apitypes.TypedData{}, errors.New(fmt.Sprintf("Invalid number of signers, expected 1 got %v\n", len(authInfo.SignerInfos)))
+		return apitypes.TypedData{}, fmt.Errorf("invalid number of signers, expected 1 got %v", len(authInfo.SignerInfos))
 	}
 
 	// Decode signer info (single signer for now)
@@ -331,7 +331,7 @@ func (e EvmosSECP256K1) decodeProtobufSignDoc(signDocBytes []byte) (apitypes.Typ
 	// Parse ChainID
 	chainID, err := types.ParseChainID(signDoc.ChainId)
 	if err != nil {
-		return apitypes.TypedData{}, errors.New("Invalid chain ID passed as argument")
+		return apitypes.TypedData{}, fmt.Errorf("unable to parse chain ID (%v)", chainID)
 	}
 
 	// Create StdFee
@@ -344,7 +344,7 @@ func (e EvmosSECP256K1) decodeProtobufSignDoc(signDocBytes []byte) (apitypes.Typ
 	var msg cosmosTypes.Msg
 	err = protoDecoder.UnpackAny(body.Messages[0], &msg)
 	if err != nil {
-		return apitypes.TypedData{}, errors.New(fmt.Sprintf("Could not unpack message object with error %v\n", err))
+		return apitypes.TypedData{}, fmt.Errorf("could not unpack message object: %v\n", err)
 	}
 
 	// Init fee payer
