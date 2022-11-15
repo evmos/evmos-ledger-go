@@ -91,12 +91,12 @@ func (e EvmosSECP256K1) GetAddressPubKeySECP256K1(hdPath []uint32, hrp string) (
 	}
 
 	if bech32AddressBytes, err = bech32.ConvertBits(account.Address.Bytes(), 8, 5, true); err != nil {
-		return make([]byte, 0), "", err
+		return make([]byte, 0), "", fmt.Errorf("unable to convert address to 32-bit representation: %v", err)
 	}
 
 	address, err := bech32.Encode(hrp, bech32AddressBytes)
 	if err != nil {
-		return make([]byte, 0), "", err
+		return make([]byte, 0), "", fmt.Errorf("unable to encode address as bech32: %v", err)
 	}
 
 	return account.PublicKey.Bytes(), address, nil
@@ -123,10 +123,6 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 		return make([]byte, 0), errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
 	}
 
-	if err != nil {
-		return make([]byte, 0), err
-	}
-
 	// Attempt to decode as both Amino and Protobuf to see which format it's in
 	typedDataAmino, errAmino := e.decodeAminoSignDoc(signDocBytes)
 	typedDataProtobuf, errProtobuf := e.decodeProtobufSignDoc(signDocBytes)
@@ -142,7 +138,7 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 	// Display EIP-712 message hash for user to verify
 	err = e.displayEIP712Hash(typedData)
 	if err != nil {
-		return make([]byte, 0), err
+		return make([]byte, 0), fmt.Errorf("unable to generate EIP-712 hash for object: %v", err)
 	}
 
 	// Sign with EIP712 signature
