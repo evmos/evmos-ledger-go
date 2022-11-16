@@ -136,8 +136,7 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 	}
 
 	// Display EIP-712 message hash for user to verify
-	err = e.displayEIP712Hash(typedData)
-	if err != nil {
+	if err := e.displayEIP712Hash(typedData); err != nil {
 		return make([]byte, 0), fmt.Errorf("unable to generate EIP-712 hash for object: %w", err)
 	}
 
