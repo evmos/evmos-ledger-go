@@ -65,7 +65,7 @@ func (e EvmosSECP256K1) GetPublicKeySECP256K1(hdPath []uint32) ([]byte, error) {
 	)
 
 	if account, err = (*e.primaryWallet).Derive(hdPath, true); err != nil {
-		return make([]byte, 0), fmt.Errorf("unable to derive public key, please retry: %w", err)
+		return make([]byte, 0), errors.New("unable to derive public key, please retry")
 	}
 
 	return account.PublicKey.Bytes(), nil
@@ -87,7 +87,7 @@ func (e EvmosSECP256K1) GetAddressPubKeySECP256K1(hdPath []uint32, hrp string) (
 	)
 
 	if account, err = (*e.primaryWallet).Derive(hdPath, true); err != nil {
-		return make([]byte, 0), "", fmt.Errorf("unable to derive Ledger address, please open the Ethereum app and retry: %w", err)
+		return make([]byte, 0), "", errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
 	}
 
 	if bech32AddressBytes, err = bech32.ConvertBits(account.Address.Bytes(), 8, 5, true); err != nil {
@@ -120,7 +120,7 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 
 	// Derive requested account
 	if account, err = (*e.primaryWallet).Derive(hdPath, true); err != nil {
-		return make([]byte, 0), fmt.Errorf("unable to derive Ledger address, please open the Ethereum app and retry, %w", err)
+		return make([]byte, 0), errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
 	}
 
 	// Attempt to decode as both Amino and Protobuf to see which format it's in
