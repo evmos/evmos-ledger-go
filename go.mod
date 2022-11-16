@@ -6,7 +6,7 @@ require (
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.46.2-0.20220831122102-a95c62680975
 	github.com/ethereum/go-ethereum v1.10.19
-	github.com/evmos/ethereum-ledger-go v0.1.1
+	github.com/evmos/ethereum-ledger-go v0.1.2
 	github.com/evmos/ethermint v0.6.1-0.20220919141022-34226aa7b1fa
 )
 
