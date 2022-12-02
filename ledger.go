@@ -31,13 +31,28 @@ type SECP256K1 interface {
 	SignSECP256K1([]uint32, []byte) ([]byte, error)
 }
 
+// LedgerDerivation defines the derivation function used on the Cosmos SDK Keyring.
+type LedgerDerivation func() (SECP256K1, error)
+
+func EvmosLedgerDerivation(config params.EncodingConfig) LedgerDerivation {
+	evmosSECP256K1 := EvmosSECP256K1{
+		config: config,
+	}
+
+	return func() (SECP256K1, error) {
+		return evmosSECP256K1.connectToLedgerApp()
+	}
+}
+
+var _ SECP256K1 = &EvmosSECP256K1{}
+
+// EvmosSECP256K1 defines a wrapper of the Ethereum App to
+// for compatibility with Cosmos SDK chains.
 type EvmosSECP256K1 struct {
 	ledger        ethLedger.EthereumLedger
 	config        params.EncodingConfig
-	primaryWallet *accounts.Wallet // This represents the first hardware wallet detected
+	primaryWallet accounts.Wallet
 }
-
-type LedgerDerivation func() (SECP256K1, error)
 
 // Closes the associated primary wallet. Any requests on
 // the object after a successful Close() should not work
@@ -46,26 +61,24 @@ func (e EvmosSECP256K1) Close() error {
 		return errors.New("could not close Ledger: no wallet found")
 	}
 
-	return (*e.primaryWallet).Close()
+	return e.Close()
 }
 
 // Return the public key associated with the address derived from
 // the provided hdPath using the primary wallet
 func (e EvmosSECP256K1) GetPublicKeySECP256K1(hdPath []uint32) ([]byte, error) {
 	if e.primaryWallet == nil {
-		return make([]byte, 0), errors.New("could not get Ledger public key: no wallet found")
+		return []byte{}, errors.New("could not get Ledger public key: no wallet found")
 	}
 
 	// Re-open wallet in case it was closed
-	_ = (*e.primaryWallet).Open("")
+	if err := e.primaryWallet.Open(""); err != nil {
+		return []byte{}, err
+	}
 
-	var (
-		account accounts.Account
-		err     error
-	)
-
-	if account, err = (*e.primaryWallet).Derive(hdPath, true); err != nil {
-		return make([]byte, 0), errors.New("unable to derive public key, please retry")
+	account, err := e.primaryWallet.Derive(hdPath, true)
+	if err != nil {
+		return []byte{}, errors.New("unable to derive public key, please retry")
 	}
 
 	return account.PublicKey.Bytes(), nil
@@ -74,29 +87,27 @@ func (e EvmosSECP256K1) GetPublicKeySECP256K1(hdPath []uint32) ([]byte, error) {
 // hrp "Human Readable Part" e.g. evmos
 func (e EvmosSECP256K1) GetAddressPubKeySECP256K1(hdPath []uint32, hrp string) ([]byte, string, error) {
 	if e.primaryWallet == nil {
-		return make([]byte, 0), "", errors.New("could not get Ledger address: no wallet found")
+		return []byte{}, "", errors.New("could not get Ledger address: no wallet found")
 	}
 
 	// Re-open wallet in case it was closed
-	_ = (*e.primaryWallet).Open("")
-
-	var (
-		account            accounts.Account
-		bech32AddressBytes []byte
-		err                error
-	)
-
-	if account, err = (*e.primaryWallet).Derive(hdPath, true); err != nil {
-		return make([]byte, 0), "", errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
+	if err := e.primaryWallet.Open(""); err != nil {
+		return []byte{}, "", err
 	}
 
-	if bech32AddressBytes, err = bech32.ConvertBits(account.Address.Bytes(), 8, 5, true); err != nil {
-		return make([]byte, 0), "", fmt.Errorf("unable to convert address to 32-bit representation: %w", err)
+	account, err := e.primaryWallet.Derive(hdPath, true)
+	if err != nil {
+		return []byte{}, "", errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
+	}
+
+	bech32AddressBytes, err := bech32.ConvertBits(account.Address.Bytes(), 8, 5, true)
+	if err != nil {
+		return []byte{}, "", fmt.Errorf("unable to convert address to 32-bit representation: %w", err)
 	}
 
 	address, err := bech32.Encode(hrp, bech32AddressBytes)
 	if err != nil {
-		return make([]byte, 0), "", fmt.Errorf("unable to encode address as bech32: %w", err)
+		return []byte{}, "", fmt.Errorf("unable to encode address as bech32: %w", err)
 	}
 
 	return account.PublicKey.Bytes(), address, nil
@@ -106,22 +117,21 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 	fmt.Printf("Generating payload, please check your Ledger...\n")
 
 	if e.primaryWallet == nil {
-		return make([]byte, 0), errors.New("unable to sign with Ledger: no wallet found")
+		return []byte{}, errors.New("unable to sign with Ledger: no wallet found")
 	}
 
 	// Re-open wallet in case it was closed
-	_ = (*e.primaryWallet).Open("")
-
-	var (
-		account   accounts.Account
-		typedData apitypes.TypedData
-		err       error
-	)
+	if err := e.primaryWallet.Open(""); err != nil {
+		return []byte{}, err
+	}
 
 	// Derive requested account
-	if account, err = (*e.primaryWallet).Derive(hdPath, true); err != nil {
-		return make([]byte, 0), errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
+	account, err := e.primaryWallet.Derive(hdPath, true)
+	if err != nil {
+		return []byte{}, errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
 	}
+
+	var typedData apitypes.TypedData
 
 	// Attempt to decode as both Amino and Protobuf to see which format it's in
 	typedDataAmino, errAmino := e.decodeAminoSignDoc(signDocBytes)
@@ -132,30 +142,21 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 	} else if errProtobuf == nil {
 		typedData = typedDataProtobuf
 	} else {
-		return make([]byte, 0), fmt.Errorf("could not encode payload as EIP-712 object\n amino: %v\n protobuf: %v", errAmino, errProtobuf)
+		return []byte{}, fmt.Errorf("could not encode payload as EIP-712 object\n amino: %v\n protobuf: %v", errAmino, errProtobuf)
 	}
 
 	// Display EIP-712 message hash for user to verify
 	if err := e.displayEIP712Hash(typedData); err != nil {
-		return make([]byte, 0), fmt.Errorf("unable to generate EIP-712 hash for object: %w", err)
+		return []byte{}, fmt.Errorf("unable to generate EIP-712 hash for object: %w", err)
 	}
 
 	// Sign with EIP712 signature
-	signature, err := (*e.primaryWallet).SignTypedData(account, typedData)
+	signature, err := e.primaryWallet.SignTypedData(account, typedData)
 	if err != nil {
-		return make([]byte, 0), fmt.Errorf("error generating signature, please retry: %w", err)
+		return []byte{}, fmt.Errorf("error generating signature, please retry: %w", err)
 	}
 
 	return signature, nil
-}
-
-func EvmosLedgerDerivation(config params.EncodingConfig) LedgerDerivation {
-	evmosSECP256K1 := new(EvmosSECP256K1)
-	evmosSECP256K1.config = config
-
-	return func() (SECP256K1, error) {
-		return evmosSECP256K1.connectToLedgerApp()
-	}
 }
 
 // Helper function to display the EIP-712 hashes; this allows users to verify the hashed message
@@ -171,14 +172,10 @@ func (e EvmosSECP256K1) displayEIP712Hash(typedData apitypes.TypedData) error {
 	}
 
 	fmt.Printf("Signing the following payload with EIP-712:\n")
-	fmt.Printf("- Domain: %v\n", bytesToHexString(domainSeparator))
-	fmt.Printf("- Message: %v\n", bytesToHexString(typedDataHash))
+	fmt.Printf("- Domain: %s\n", bytesToHexString(domainSeparator))
+	fmt.Printf("- Message: %s\n", bytesToHexString(typedDataHash))
 
 	return nil
-}
-
-func bytesToHexString(bytes []byte) string {
-	return "0x" + strings.ToUpper(hex.EncodeToString(bytes))
 }
 
 func (e EvmosSECP256K1) connectToLedgerApp() (SECP256K1, error) {
@@ -203,7 +200,7 @@ func (e EvmosSECP256K1) connectToLedgerApp() (SECP256K1, error) {
 		return nil, err
 	}
 
-	e.primaryWallet = &primaryWallet
+	e.primaryWallet = primaryWallet
 
 	return e, nil
 }
@@ -254,6 +251,7 @@ func (e EvmosSECP256K1) decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedD
 	if len(msg.GetSigners()) != 1 {
 		return apitypes.TypedData{}, fmt.Errorf("invalid number of signers, expected 1 got %d", len(msg.GetSigners()))
 	}
+
 	feePayer := msg.GetSigners()[0]
 	feeDelegation := &eip712.FeeDelegationOptions{
 		FeePayer: feePayer,
@@ -272,7 +270,6 @@ func (e EvmosSECP256K1) decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedD
 		signDocBytes, // Amino StdSignDocBytes
 		feeDelegation,
 	)
-
 	if err != nil {
 		return apitypes.TypedData{}, fmt.Errorf("could not convert to EIP712 object: %w", err)
 	}
@@ -375,4 +372,8 @@ func (e EvmosSECP256K1) decodeProtobufSignDoc(signDocBytes []byte) (apitypes.Typ
 	}
 
 	return typedData, nil
+}
+
+func bytesToHexString(bytes []byte) string {
+	return "0x" + strings.ToUpper(hex.EncodeToString(bytes))
 }

@@ -128,7 +128,6 @@ func getFakeTxProtobuf(t *testing.T) []byte {
 		"evmos_9000-1",
 		0,
 	)
-
 	if err != nil {
 		panic(fmt.Sprintf("Error marshaling sign doc %v\n", err))
 	}
@@ -233,7 +232,6 @@ func verifyTypedDataFields(t *testing.T, typedData apitypes.TypedData) {
 func TestSanityDecodeBytes(t *testing.T) {
 	e := newEvmosSecpWithTestConfig()
 	typedData, err := e.decodeAminoSignDoc(getFakeTxAmino())
-
 	if err != nil {
 		panic(fmt.Sprintf("Failed with err %v\n", err))
 	}
@@ -364,7 +362,6 @@ func TestGetLedgerAddress(t *testing.T) {
 	}
 
 	pubkey, addr, err := wallet.GetAddressPubKeySECP256K1(accounts.DefaultBaseDerivationPath, "evmos")
-
 	if err != nil {
 		t.Errorf("Could not get wallet address with error %v\n", err)
 	}
@@ -393,7 +390,6 @@ func TestGetLedgerPubkey(t *testing.T) {
 	}
 
 	pubkey, err := wallet.GetPublicKeySECP256K1(accounts.DefaultBaseDerivationPath)
-
 	if err != nil {
 		t.Errorf("Could not get wallet address with error %v\n", err)
 	}
@@ -421,7 +417,6 @@ func TestGetAltLedgerAddress(t *testing.T) {
 	}
 
 	pubkey, addr, err := wallet.GetAddressPubKeySECP256K1(path, "evmos")
-
 	if err != nil {
 		t.Errorf("Could not get wallet address with error %v\n", err)
 	}
