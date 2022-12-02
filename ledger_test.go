@@ -3,7 +3,6 @@ package ledger
 import (
 	"encoding/hex"
 	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -47,11 +46,9 @@ func newEvmosSecpWithTestConfig() *EvmosSECP256K1 {
 	return e
 }
 
-func newPubKey(pk string) (res cryptoTypes.PubKey) {
+func newPubKey(t *testing.T, pk string) (res cryptoTypes.PubKey) {
 	pkBytes, err := hex.DecodeString(pk)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
 
 	pubkey := &ed25519.PubKey{Key: pkBytes}
 
@@ -91,7 +88,8 @@ func getFakeTxProtobuf(t *testing.T) []byte {
 		Memo: memo,
 	}
 
-	pubKey := newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB50")
+	pubKey := newPubKey(t, "0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB50")
+
 	pubKeyAsAny, err := codecTypes.NewAnyWithValue(pubKey)
 	require.NoError(t, err)
 
@@ -166,29 +164,18 @@ func verifyTypedDataFields(t *testing.T, typedData apitypes.TypedData) {
 
 	msg := msgs[0].(map[string]interface{})
 	msgType := msg["type"]
-	if msgType != "cosmos-sdk/MsgSend" {
-		require.NoError(t, err, "Invalid message type, expected 'cosmos-sdk/MsgSend' but got %v\n", msgType)
-	}
+	require.Equal(t, "cosmos-sdk/MsgSend", msgType)
 
 	msgVal := msg["value"].(map[string]interface{})
 	msgAmount := msgVal["amount"].([]interface{})[0].(map[string]interface{})
-	if msgAmount["amount"] != "150" {
-		require.NoError(t, err, "Invalid message amount, expected '150' but got %v\n", msgVal["amount"])
-	}
-
-	if msgAmount["denom"] != "atom" {
-		require.NoError(t, err, "Invalid denom, expected 'atom' but got %v\n", msgVal["denom"])
-	}
+	require.Equal(t, "150", msgAmount["amount"])
+	require.Equal(t, "atom", msgAmount["denom"])
 
 	msgFrom := msgVal["from_address"]
-	if msgFrom != "cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp" {
-		require.NoError(t, err, "Invalid message from address, expected 'cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp' but got %v\n", msgFrom)
-	}
+	require.Equal(t, "cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp", msgFrom)
 
 	msgTo := msgVal["to_address"]
-	if msgTo != "cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a" {
-		require.NoError(t, err, "Invalid message to address, expected 'cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a' but got %v\n", msgTo)
-	}
+	require.Equal(t, "cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a", msgTo)
 }
 
 func TestSanityDecodeBytes(t *testing.T) {
@@ -260,18 +247,12 @@ func TestAminoTypedData(t *testing.T) {
 func TestTypedDataEquivalence(t *testing.T) {
 	e := newEvmosSecpWithTestConfig()
 	protobufTypedData, err := e.decodeProtobufSignDoc(getFakeTxProtobuf(t))
-	if err != nil {
-		require.NoError(t, err, "Did not expect to fail decoding Amino SignDoc: %v\n", err)
-	}
+	require.NoError(t, err, "Did not expect to fail decoding Protobuf SignDoc")
 
 	aminoTypedData, err := e.decodeAminoSignDoc(getFakeTxAmino())
-	if err != nil {
-		require.NoError(t, err, "Did not expect to fail decoding Amino SignDoc: %v\n", err)
-	}
+	require.NoError(t, err, "Did not expect to fail decoding Amino SignDoc")
 
-	if !reflect.DeepEqual(protobufTypedData, aminoTypedData) {
-		require.NoError(t, err, "Unequal typed datas, expected equivalence")
-	}
+	require.Equal(t, protobufTypedData, aminoTypedData, "Unequal typed datas, expected equivalence")
 }
 
 func TestPayloadSignaturesEquivalence(t *testing.T) {
@@ -287,18 +268,12 @@ func TestPayloadSignaturesEquivalence(t *testing.T) {
 	}
 
 	protoSignature, err := wallet.SignSECP256K1(accounts.DefaultBaseDerivationPath, getFakeTxProtobuf(t))
-	if err != nil {
-		require.NoError(t, err, "Could not sign Protobuf bytes")
-	}
+	require.NoError(t, err, "Could not sign Protobuf bytes")
 
 	aminoSignature, err := wallet.SignSECP256K1(accounts.DefaultBaseDerivationPath, getFakeTxAmino())
-	if err != nil {
-		require.NoError(t, err, "Could not sign Amino bytes")
-	}
+	require.NoError(t, err, "Could not sign Amino bytes")
 
-	if !reflect.DeepEqual(protoSignature, aminoSignature) {
-		require.NoError(t, err, "Payload signatures are different, expected the same")
-	}
+	require.Equal(t, protoSignature, aminoSignature, "Payload signatures are different, expected the same")
 }
 
 func TestGetLedgerAddress(t *testing.T) {
