@@ -189,7 +189,9 @@ func TestSanityDecodeBytes(t *testing.T) {
 func TestLedgerAminoSignature(t *testing.T) {
 	deriveLedger := EvmosLedgerDerivation(testConfig())
 	wallet, err := deriveLedger()
+	require.NoError(t, err, "could not retrieve wallet")
 	defer func() {
+		require.NotNil(t, wallet)
 		err := wallet.Close()
 		require.NoError(t, err)
 	}()
@@ -205,12 +207,12 @@ func TestLedgerAminoSignature(t *testing.T) {
 func TestLedgerProtobufSignature(t *testing.T) {
 	deriveLedger := EvmosLedgerDerivation(testConfig())
 	wallet, err := deriveLedger()
+	require.NoError(t, err, "could not retrieve wallet")
 	defer func() {
+		require.NotNil(t, wallet)
 		err := wallet.Close()
 		require.NoError(t, err)
 	}()
-
-	require.NoError(t, err, "could not retrieve wallet")
 
 	signature, err := wallet.SignSECP256K1(accounts.DefaultBaseDerivationPath, getFakeTxProtobuf(t))
 	require.NoError(t, err, "could not sign bytes")
@@ -258,14 +260,12 @@ func TestTypedDataEquivalence(t *testing.T) {
 func TestPayloadSignaturesEquivalence(t *testing.T) {
 	deriveLedger := EvmosLedgerDerivation(testConfig())
 	wallet, err := deriveLedger()
+	require.NoError(t, err, "could not retrieve wallet")
 	defer func() {
+		require.NotNil(t, wallet)
 		err := wallet.Close()
 		require.NoError(t, err)
 	}()
-
-	if err != nil {
-		require.NoError(t, err, "Could not retrieve wallet")
-	}
 
 	protoSignature, err := wallet.SignSECP256K1(accounts.DefaultBaseDerivationPath, getFakeTxProtobuf(t))
 	require.NoError(t, err, "Could not sign Protobuf bytes")
@@ -279,12 +279,12 @@ func TestPayloadSignaturesEquivalence(t *testing.T) {
 func TestGetLedgerAddress(t *testing.T) {
 	deriveLedger := EvmosLedgerDerivation(testConfig())
 	wallet, err := deriveLedger()
+	require.NoError(t, err, "could not retrieve wallet")
 	defer func() {
+		require.NotNil(t, wallet)
 		err := wallet.Close()
 		require.NoError(t, err)
 	}()
-
-	require.NoError(t, err, "Could not retrieve wallet")
 
 	pubkey, addr, err := wallet.GetAddressPubKeySECP256K1(accounts.DefaultBaseDerivationPath, "evmos")
 	require.NoError(t, err, "Could not get wallet address")
@@ -303,12 +303,12 @@ func TestGetLedgerAddress(t *testing.T) {
 func TestGetLedgerPubkey(t *testing.T) {
 	deriveLedger := EvmosLedgerDerivation(testConfig())
 	wallet, err := deriveLedger()
+	require.NoError(t, err, "could not retrieve wallet")
 	defer func() {
+		require.NotNil(t, wallet)
 		err := wallet.Close()
 		require.NoError(t, err)
 	}()
-
-	require.NoError(t, err, "Could not retrieve wallet")
 
 	pubkey, err := wallet.GetPublicKeySECP256K1(accounts.DefaultBaseDerivationPath)
 	require.NoError(t, err, "Could not get wallet address")
@@ -324,12 +324,12 @@ func TestGetLedgerPubkey(t *testing.T) {
 func TestGetAltLedgerAddress(t *testing.T) {
 	deriveLedger := EvmosLedgerDerivation(testConfig())
 	wallet, err := deriveLedger()
+	require.NoError(t, err, "could not retrieve wallet")
 	defer func() {
+		require.NotNil(t, wallet)
 		err := wallet.Close()
 		require.NoError(t, err)
 	}()
-
-	require.NoError(t, err, "could not retrieve wallet")
 
 	path, err := accounts.ParseDerivationPath("m/44'/60'/0'/0/1")
 	require.NoError(t, err, "could not parse derivation path")
