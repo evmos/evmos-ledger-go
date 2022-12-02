@@ -9,7 +9,6 @@ import (
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/cosmos/cosmos-sdk/types"
 	txTypes "github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
@@ -17,33 +16,19 @@ import (
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"github.com/evmos/ethereum-ledger-go/accounts"
+	"github.com/evmos/ethermint/app"
+	"github.com/evmos/ethermint/encoding"
+	"github.com/evmos/ethermint/ethereum/eip712"
 	"github.com/stretchr/testify/require"
 )
 
 // Test Mnemonic:
 // glow spread dentist swamp people siren hint muscle first sausage castle metal cycle abandon accident logic again around mix dial knee organ episode usual
 
-func testConfig() params.EncodingConfig {
-	config := &params.EncodingConfig{}
-	// Init Amino
-	amino := codec.NewLegacyAmino()
-	amino.RegisterInterface((*types.Msg)(nil), nil)
-	amino.RegisterConcrete(&bankTypes.MsgSend{}, "cosmos-sdk/MsgSend", nil)
-	// Init Protobuf
-	registry := codecTypes.NewInterfaceRegistry()
-	registry.RegisterImplementations((*types.Msg)(nil), &bankTypes.MsgSend{})
-
-	config.InterfaceRegistry = registry
-	config.Amino = amino
-
-	return *config
-}
-
-func newEvmosSecpWithTestConfig() *EvmosSECP256K1 {
-	config := testConfig()
-	e := new(EvmosSECP256K1)
-	e.config = config
-	return e
+// Load encoding config for sign doc encoding/decoding
+func init() {
+	config := encoding.MakeConfig(app.ModuleBasics)
+	eip712.SetEncodingConfig(config)
 }
 
 func newPubKey(t *testing.T, pk string) (res cryptoTypes.PubKey) {
@@ -178,16 +163,8 @@ func verifyTypedDataFields(t *testing.T, typedData apitypes.TypedData) {
 	require.Equal(t, "cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a", msgTo)
 }
 
-func TestSanityDecodeBytes(t *testing.T) {
-	e := newEvmosSecpWithTestConfig()
-	typedData, err := e.decodeAminoSignDoc(getFakeTxAmino())
-	require.NoError(t, err)
-
-	t.Logf("Typed data %v\n", typedData)
-}
-
 func TestLedgerAminoSignature(t *testing.T) {
-	deriveLedger := EvmosLedgerDerivation(testConfig())
+	deriveLedger := EvmosLedgerDerivation()
 	wallet, err := deriveLedger()
 	require.NoError(t, err, "could not retrieve wallet")
 	defer func() {
@@ -205,7 +182,7 @@ func TestLedgerAminoSignature(t *testing.T) {
 }
 
 func TestLedgerProtobufSignature(t *testing.T) {
-	deriveLedger := EvmosLedgerDerivation(testConfig())
+	deriveLedger := EvmosLedgerDerivation()
 	wallet, err := deriveLedger()
 	require.NoError(t, err, "could not retrieve wallet")
 	defer func() {
@@ -220,45 +197,8 @@ func TestLedgerProtobufSignature(t *testing.T) {
 	t.Logf("Signature %v\n", signature)
 }
 
-func TestProtobufDecodesAmino(t *testing.T) {
-	e := newEvmosSecpWithTestConfig()
-	_, err := e.decodeProtobufSignDoc(getFakeTxAmino())
-	require.Error(t, err, "expected to fail decoding Aminos")
-}
-
-func TestAminoDecodesProtobuf(t *testing.T) {
-	e := newEvmosSecpWithTestConfig()
-	_, err := e.decodeAminoSignDoc(getFakeTxProtobuf(t))
-	require.Error(t, err, "expected to fail decoding Protobuf")
-}
-
-func TestProtobufTypedData(t *testing.T) {
-	e := newEvmosSecpWithTestConfig()
-	typedData, err := e.decodeProtobufSignDoc(getFakeTxProtobuf(t))
-	require.NoError(t, err, "did not expect to fail decoding Protobuf SignDoc")
-	verifyTypedDataFields(t, typedData)
-}
-
-func TestAminoTypedData(t *testing.T) {
-	e := newEvmosSecpWithTestConfig()
-	typedData, err := e.decodeAminoSignDoc(getFakeTxAmino())
-	require.NoError(t, err, "Did not expect to fail decoding Amino SignDoc")
-	verifyTypedDataFields(t, typedData)
-}
-
-func TestTypedDataEquivalence(t *testing.T) {
-	e := newEvmosSecpWithTestConfig()
-	protobufTypedData, err := e.decodeProtobufSignDoc(getFakeTxProtobuf(t))
-	require.NoError(t, err, "Did not expect to fail decoding Protobuf SignDoc")
-
-	aminoTypedData, err := e.decodeAminoSignDoc(getFakeTxAmino())
-	require.NoError(t, err, "Did not expect to fail decoding Amino SignDoc")
-
-	require.Equal(t, protobufTypedData, aminoTypedData, "Unequal typed datas, expected equivalence")
-}
-
 func TestPayloadSignaturesEquivalence(t *testing.T) {
-	deriveLedger := EvmosLedgerDerivation(testConfig())
+	deriveLedger := EvmosLedgerDerivation()
 	wallet, err := deriveLedger()
 	require.NoError(t, err, "could not retrieve wallet")
 	defer func() {
@@ -277,7 +217,7 @@ func TestPayloadSignaturesEquivalence(t *testing.T) {
 }
 
 func TestGetLedgerAddress(t *testing.T) {
-	deriveLedger := EvmosLedgerDerivation(testConfig())
+	deriveLedger := EvmosLedgerDerivation()
 	wallet, err := deriveLedger()
 	require.NoError(t, err, "could not retrieve wallet")
 	defer func() {
@@ -301,7 +241,7 @@ func TestGetLedgerAddress(t *testing.T) {
 }
 
 func TestGetLedgerPubkey(t *testing.T) {
-	deriveLedger := EvmosLedgerDerivation(testConfig())
+	deriveLedger := EvmosLedgerDerivation()
 	wallet, err := deriveLedger()
 	require.NoError(t, err, "could not retrieve wallet")
 	defer func() {
@@ -322,7 +262,7 @@ func TestGetLedgerPubkey(t *testing.T) {
 
 // Get the address and public key for a different HD Path
 func TestGetAltLedgerAddress(t *testing.T) {
-	deriveLedger := EvmosLedgerDerivation(testConfig())
+	deriveLedger := EvmosLedgerDerivation()
 	wallet, err := deriveLedger()
 	require.NoError(t, err, "could not retrieve wallet")
 	defer func() {
