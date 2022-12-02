@@ -49,7 +49,7 @@ var _ SECP256K1 = &EvmosSECP256K1{}
 // EvmosSECP256K1 defines a wrapper of the Ethereum App to
 // for compatibility with Cosmos SDK chains.
 type EvmosSECP256K1 struct {
-	ledger        ethLedger.EthereumLedger
+	ledger        *ethLedger.EthereumLedger
 	config        params.EncodingConfig
 	primaryWallet accounts.Wallet
 }
@@ -61,7 +61,7 @@ func (e EvmosSECP256K1) Close() error {
 		return errors.New("could not close Ledger: no wallet found")
 	}
 
-	return e.Close()
+	return e.primaryWallet.Close()
 }
 
 // Return the public key associated with the address derived from
@@ -178,14 +178,18 @@ func (e EvmosSECP256K1) displayEIP712Hash(typedData apitypes.TypedData) error {
 	return nil
 }
 
-func (e EvmosSECP256K1) connectToLedgerApp() (SECP256K1, error) {
+func (e *EvmosSECP256K1) connectToLedgerApp() (SECP256K1, error) {
 	// Instantiate new Ledger object
 	ledger, err := ethLedger.New()
 	if err != nil {
 		return nil, err
 	}
 
-	e.ledger = *ledger
+	if ledger == nil {
+		return nil, errors.New("no hardware wallets detected")
+	}
+
+	e.ledger = ledger
 	wallets := e.ledger.Wallets()
 
 	// No wallets detected; throw an error
@@ -196,6 +200,7 @@ func (e EvmosSECP256K1) connectToLedgerApp() (SECP256K1, error) {
 	// Default to use first wallet found
 	primaryWallet := wallets[0]
 
+	// Re-open wallet in case it was closed
 	if err := primaryWallet.Open(""); err != nil {
 		return nil, err
 	}

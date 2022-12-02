@@ -18,6 +18,7 @@ import (
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"github.com/evmos/ethereum-ledger-go/accounts"
+	"github.com/stretchr/testify/require"
 )
 
 // Test Mnemonic:
@@ -242,61 +243,51 @@ func TestSanityDecodeBytes(t *testing.T) {
 func TestLedgerAminoSignature(t *testing.T) {
 	deriveLedger := EvmosLedgerDerivation(testConfig())
 	wallet, err := deriveLedger()
-	defer wallet.Close()
+	defer func() {
+		err := wallet.Close()
+		require.NoError(t, err)
+	}()
 
-	if err != nil {
-		panic(fmt.Sprintf("Could not retrieve wallet with error %v\n", err))
-	}
+	require.NoError(t, err, "could not retrieve wallet")
 
 	signature, err := wallet.SignSECP256K1(accounts.DefaultBaseDerivationPath, getFakeTxAmino())
-	if err != nil {
-		panic(fmt.Sprintf("Could not sign bytes with error %v\n", err))
-	}
+	require.NoError(t, err, "could not sign bytes")
 
-	fmt.Printf("Signature %v\n", signature)
+	t.Logf("Signature %v\n", signature)
 }
 
 func TestLedgerProtobufSignature(t *testing.T) {
 	deriveLedger := EvmosLedgerDerivation(testConfig())
 	wallet, err := deriveLedger()
-	defer wallet.Close()
+	defer func() {
+		err := wallet.Close()
+		require.NoError(t, err)
+	}()
 
-	if err != nil {
-		panic(fmt.Sprintf("Could not retrieve wallet with error %v\n", err))
-	}
+	require.NoError(t, err, "could not retrieve wallet")
 
 	signature, err := wallet.SignSECP256K1(accounts.DefaultBaseDerivationPath, getFakeTxProtobuf(t))
-	if err != nil {
-		panic(fmt.Sprintf("Could not sign bytes with error %v\n", err))
-	}
+	require.NoError(t, err, "could not sign bytes")
 
-	fmt.Printf("Signature %v\n", signature)
+	t.Logf("Signature %v\n", signature)
 }
 
 func TestProtobufDecodesAmino(t *testing.T) {
 	e := newEvmosSecpWithTestConfig()
 	_, err := e.decodeProtobufSignDoc(getFakeTxAmino())
-
-	if err == nil {
-		t.Error("Expected to fail decoding Amino")
-	}
+	require.Error(t, err, "expected to fail decoding Aminos")
 }
 
 func TestAminoDecodesProtobuf(t *testing.T) {
 	e := newEvmosSecpWithTestConfig()
 	_, err := e.decodeAminoSignDoc(getFakeTxProtobuf(t))
-
-	if err == nil {
-		t.Error("Expected to fail decoding Protobuf")
-	}
+	require.Error(t, err, "expected to fail decoding Protobuf")
 }
 
 func TestProtobufTypedData(t *testing.T) {
 	e := newEvmosSecpWithTestConfig()
 	typedData, err := e.decodeProtobufSignDoc(getFakeTxProtobuf(t))
-	if err != nil {
-		t.Errorf("Did not expect to fail decoding Protobuf SignDoc: %v\n", err)
-	}
+	require.NoError(t, err, "did not expect to fail decoding Protobuf SignDoc")
 
 	verifyTypedDataFields(t, typedData)
 }
