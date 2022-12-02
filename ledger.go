@@ -7,18 +7,11 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcutil/bech32"
-	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/simapp/params"
-	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
-
-	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
-	txTypes "github.com/cosmos/cosmos-sdk/types/tx"
 
 	apitypes "github.com/ethereum/go-ethereum/signer/core/apitypes"
 	ethLedger "github.com/evmos/ethereum-ledger-go"
 	"github.com/evmos/ethereum-ledger-go/accounts"
 	"github.com/evmos/ethermint/ethereum/eip712"
-	"github.com/evmos/ethermint/types"
 )
 
 type SECP256K1 interface {
@@ -34,10 +27,8 @@ type SECP256K1 interface {
 // LedgerDerivation defines the derivation function used on the Cosmos SDK Keyring.
 type LedgerDerivation func() (SECP256K1, error)
 
-func EvmosLedgerDerivation(config params.EncodingConfig) LedgerDerivation {
-	evmosSECP256K1 := EvmosSECP256K1{
-		config: config,
-	}
+func EvmosLedgerDerivation() LedgerDerivation {
+	evmosSECP256K1 := new(EvmosSECP256K1)
 
 	return func() (SECP256K1, error) {
 		return evmosSECP256K1.connectToLedgerApp()
@@ -50,7 +41,6 @@ var _ SECP256K1 = &EvmosSECP256K1{}
 // for compatibility with Cosmos SDK chains.
 type EvmosSECP256K1 struct {
 	ledger        *ethLedger.EthereumLedger
-	config        params.EncodingConfig
 	primaryWallet accounts.Wallet
 }
 
@@ -126,18 +116,9 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 		return []byte{}, errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
 	}
 
-	var typedData apitypes.TypedData
-
-	// Attempt to decode as both Amino and Protobuf to see which format it's in
-	typedDataAmino, errAmino := e.decodeAminoSignDoc(signDocBytes)
-	typedDataProtobuf, errProtobuf := e.decodeProtobufSignDoc(signDocBytes)
-
-	if errAmino == nil {
-		typedData = typedDataAmino
-	} else if errProtobuf == nil {
-		typedData = typedDataProtobuf
-	} else {
-		return []byte{}, fmt.Errorf("could not encode payload as EIP-712 object\n amino: %v\n protobuf: %v", errAmino, errProtobuf)
+	typedData, err := eip712.GetEIP712TypedDataForMsg(signDocBytes)
+	if err != nil {
+		return []byte{}, err
 	}
 
 	// Display EIP-712 message hash for user to verify
@@ -203,175 +184,6 @@ func (e *EvmosSECP256K1) connectToLedgerApp() (SECP256K1, error) {
 	e.primaryWallet = primaryWallet
 
 	return e, nil
-}
-
-func (e EvmosSECP256K1) evmosProtoDecoder() codec.ProtoCodecMarshaler {
-	return codec.NewProtoCodec(e.config.InterfaceRegistry)
-}
-
-func (e EvmosSECP256K1) evmosAminoDecoder() *codec.LegacyAmino {
-	return e.config.Amino
-}
-
-func (e EvmosSECP256K1) decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
-	var (
-		aminoDoc legacytx.StdSignDoc
-		err      error
-	)
-
-	// Initialize amino codec with Evmos registrations
-	aminoCodec := e.evmosAminoDecoder()
-	protoDecoder := e.evmosProtoDecoder()
-
-	err = aminoCodec.UnmarshalJSON(signDocBytes, &aminoDoc)
-	if err != nil {
-		return apitypes.TypedData{}, err
-	}
-
-	// Unwrap fees
-	var fees legacytx.StdFee
-	err = aminoCodec.UnmarshalJSON(aminoDoc.Fee, &fees)
-	if err != nil {
-		return apitypes.TypedData{}, err
-	}
-
-	if len(aminoDoc.Msgs) != 1 {
-		return apitypes.TypedData{}, fmt.Errorf("invalid number of messages in SignDoc, expected 1 but got %v", len(aminoDoc.Msgs))
-	}
-
-	var msg cosmosTypes.Msg
-	err = aminoCodec.UnmarshalJSON(aminoDoc.Msgs[0], &msg)
-	if err != nil {
-		fmt.Printf("Encountered err %v\n", err)
-		return apitypes.TypedData{}, err
-	}
-
-	// By default, use first address in list of signers to cover fee
-	// Currently, support only one signer
-	if len(msg.GetSigners()) != 1 {
-		return apitypes.TypedData{}, fmt.Errorf("invalid number of signers, expected 1 got %d", len(msg.GetSigners()))
-	}
-
-	feePayer := msg.GetSigners()[0]
-	feeDelegation := &eip712.FeeDelegationOptions{
-		FeePayer: feePayer,
-	}
-
-	// Parse ChainID
-	chainID, err := types.ParseChainID(aminoDoc.ChainID)
-	if err != nil {
-		return apitypes.TypedData{}, fmt.Errorf("unable to parse chain ID (%s)", chainID)
-	}
-
-	typedData, err := eip712.WrapTxToTypedData(
-		protoDecoder,
-		chainID.Uint64(),
-		msg,
-		signDocBytes, // Amino StdSignDocBytes
-		feeDelegation,
-	)
-	if err != nil {
-		return apitypes.TypedData{}, fmt.Errorf("could not convert to EIP712 object: %w", err)
-	}
-
-	return typedData, nil
-}
-
-func (e EvmosSECP256K1) decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
-	// Init decoder
-	protoDecoder := e.evmosProtoDecoder()
-
-	// Decode sign doc
-	signDoc := &txTypes.SignDoc{}
-	err := signDoc.Unmarshal(signDocBytes)
-	if err != nil {
-		return apitypes.TypedData{}, err
-	}
-
-	// Decode auth info
-	authInfo := &txTypes.AuthInfo{}
-	err = authInfo.Unmarshal(signDoc.AuthInfoBytes)
-	if err != nil {
-		return apitypes.TypedData{}, err
-	}
-
-	// Decode body
-	body := &txTypes.TxBody{}
-	err = body.Unmarshal(signDoc.BodyBytes)
-	if err != nil {
-		return apitypes.TypedData{}, err
-	}
-
-	// Until support for these fields is added, throw an error at their presence
-	if body.TimeoutHeight != 0 || len(body.ExtensionOptions) != 0 || len(body.NonCriticalExtensionOptions) != 0 {
-		return apitypes.TypedData{}, errors.New("transaction body contains unsupported fields: TimeoutHeight, ExtensionOptions, or NonCriticalExtensionOptions")
-	}
-
-	// Verify single message
-	if len(body.Messages) != 1 {
-		return apitypes.TypedData{}, fmt.Errorf("invalid number of messages, expected 1 got %d", len(body.Messages))
-	}
-
-	// Verify single signature (single signer for now)
-	if len(authInfo.SignerInfos) != 1 {
-		return apitypes.TypedData{}, fmt.Errorf("invalid number of signers, expected 1 got %d", len(authInfo.SignerInfos))
-	}
-
-	// Decode signer info (single signer for now)
-	signerInfo := authInfo.SignerInfos[0]
-
-	// Parse ChainID
-	chainID, err := types.ParseChainID(signDoc.ChainId)
-	if err != nil {
-		return apitypes.TypedData{}, fmt.Errorf("unable to parse chain ID (%s)", chainID)
-	}
-
-	// Create StdFee
-	stdFee := &legacytx.StdFee{
-		Amount: authInfo.Fee.Amount,
-		Gas:    authInfo.Fee.GasLimit,
-	}
-
-	// Parse Message (single message only)
-	var msg cosmosTypes.Msg
-	err = protoDecoder.UnpackAny(body.Messages[0], &msg)
-	if err != nil {
-		return apitypes.TypedData{}, fmt.Errorf("could not unpack message object: %w", err)
-	}
-
-	// Init fee payer
-	feePayer := msg.GetSigners()[0]
-	feeDelegation := &eip712.FeeDelegationOptions{
-		FeePayer: feePayer,
-	}
-
-	// Get tip
-	tip := authInfo.Tip
-
-	// Create Legacy SignBytes (expected type for WrapTxToTypedData)
-	signBytes := legacytx.StdSignBytes(
-		signDoc.ChainId,
-		signDoc.AccountNumber,
-		signerInfo.Sequence,
-		body.TimeoutHeight,
-		*stdFee,
-		[]cosmosTypes.Msg{msg},
-		body.Memo,
-		tip,
-	)
-
-	typedData, err := eip712.WrapTxToTypedData(
-		protoDecoder,
-		chainID.Uint64(),
-		msg,
-		signBytes,
-		feeDelegation,
-	)
-	if err != nil {
-		return apitypes.TypedData{}, err
-	}
-
-	return typedData, nil
 }
 
 func bytesToHexString(bytes []byte) string {
