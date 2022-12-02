@@ -71,10 +71,8 @@ func (e EvmosSECP256K1) GetPublicKeySECP256K1(hdPath []uint32) ([]byte, error) {
 		return []byte{}, errors.New("could not get Ledger public key: no wallet found")
 	}
 
-	// Re-open wallet in case it was closed
-	if err := e.primaryWallet.Open(""); err != nil {
-		return []byte{}, err
-	}
+	// Re-open wallet in case it was closed. Do not handle the error here (see SignSECP256K1)
+	_ = e.primaryWallet.Open("")
 
 	account, err := e.primaryWallet.Derive(hdPath, true)
 	if err != nil {
@@ -90,10 +88,8 @@ func (e EvmosSECP256K1) GetAddressPubKeySECP256K1(hdPath []uint32, hrp string) (
 		return []byte{}, "", errors.New("could not get Ledger address: no wallet found")
 	}
 
-	// Re-open wallet in case it was closed
-	if err := e.primaryWallet.Open(""); err != nil {
-		return []byte{}, "", err
-	}
+	// Re-open wallet in case it was closed. Ignore the error here (see SignSECP256K1)
+	_ = e.primaryWallet.Open("")
 
 	account, err := e.primaryWallet.Derive(hdPath, true)
 	if err != nil {
@@ -120,10 +116,9 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 		return []byte{}, errors.New("unable to sign with Ledger: no wallet found")
 	}
 
-	// Re-open wallet in case it was closed
-	if err := e.primaryWallet.Open(""); err != nil {
-		return []byte{}, err
-	}
+	// Re-open wallet in case it was closed. Since this errors if the wallet is already open,
+	// ignore the error. Any errors due to the wallet being closed will surface later on.
+	_ = e.primaryWallet.Open("")
 
 	// Derive requested account
 	account, err := e.primaryWallet.Derive(hdPath, true)
@@ -200,7 +195,7 @@ func (e *EvmosSECP256K1) connectToLedgerApp() (SECP256K1, error) {
 	// Default to use first wallet found
 	primaryWallet := wallets[0]
 
-	// Re-open wallet in case it was closed
+	// Open wallet for the first time. Unlike with other cases, we want to handle the error here.
 	if err := primaryWallet.Open(""); err != nil {
 		return nil, err
 	}
