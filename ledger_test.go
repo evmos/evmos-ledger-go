@@ -82,9 +82,7 @@ func getFakeTxProtobuf(t *testing.T) []byte {
 	)
 
 	msgAsAny, err := codecTypes.NewAnyWithValue(msg)
-	if err != nil {
-		panic(fmt.Sprintf("Error converting message to any %v\n", err))
-	}
+	require.NoError(t, err)
 
 	body := &txTypes.TxBody{
 		Messages: [](*codecTypes.Any){
@@ -95,9 +93,7 @@ func getFakeTxProtobuf(t *testing.T) []byte {
 
 	pubKey := newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB50")
 	pubKeyAsAny, err := codecTypes.NewAnyWithValue(pubKey)
-	if err != nil {
-		panic(fmt.Sprintf("Error converting pubkey to any %v\n", err))
-	}
+	require.NoError(t, err)
 
 	signingMode := txTypes.ModeInfo_Single_{
 		Single: &txTypes.ModeInfo_Single{
@@ -129,9 +125,7 @@ func getFakeTxProtobuf(t *testing.T) []byte {
 		"evmos_9000-1",
 		0,
 	)
-	if err != nil {
-		panic(fmt.Sprintf("Error marshaling sign doc %v\n", err))
-	}
+	require.NoError(t, err)
 
 	return signBytes
 }
@@ -139,105 +133,70 @@ func getFakeTxProtobuf(t *testing.T) []byte {
 func verifyTypedDataFields(t *testing.T, typedData apitypes.TypedData) {
 	// Verify EIP712 Domain
 	chainIdBytes, err := typedData.Domain.ChainId.MarshalText()
-	if err != nil {
-		t.Errorf("Could not unwrap chainID bytes with err: %v\n", err)
-	}
-
-	if string(chainIdBytes) != "0x2328" { // 9000 in hex
-		t.Errorf("Invalid chainID, expected 0x2328 but received %v\n", string(chainIdBytes))
-	}
-
-	if typedData.Domain.Name != "Cosmos Web3" {
-		t.Errorf("Invalid domain name, expected 'Cosmos Web3' but got %v\n", typedData.Domain.Name)
-	}
-
-	if typedData.Domain.Version != "1.0.0" {
-		t.Errorf("Invalid domain version, expected '1.0.0' but got %v\n", typedData.Domain.Version)
-	}
-
-	if typedData.Domain.VerifyingContract != "cosmos" {
-		t.Errorf("Invalid verifying contract, expected 'cosmos' but got %v\n", typedData.Domain.VerifyingContract)
-	}
-
-	if typedData.Domain.Salt != "0" {
-		t.Errorf("Invalid salt, expected '0' but got %v\n", typedData.Domain.Salt)
-	}
+	require.NoError(t, err, "Could not unwrap chainID bytes with err: %v\n", err)
+	require.Equal(t, "0x2328", string(chainIdBytes))
+	require.Equal(t, "Cosmos Web3", typedData.Domain.Name)
+	require.Equal(t, "1.0.0", typedData.Domain.Version)
+	require.Equal(t, "cosmos", typedData.Domain.VerifyingContract)
+	require.Equal(t, "0", typedData.Domain.Salt)
 
 	// Verify EIP712 Message Fields
 	accountNum := typedData.Message["account_number"]
-	if accountNum != "0" {
-		t.Errorf("Invalid account number, expected 0 but got %v\n", accountNum)
-	}
+	require.Equal(t, "0", accountNum)
 
 	chainId := typedData.Message["chain_id"]
-	if chainId != "evmos_9000-1" {
-		t.Errorf("Invalid chain ID, expected 'evmos_9000-1' but got %v\n", chainId)
-	}
+	require.Equal(t, "evmos_9000-1", chainId)
 
 	fee := (typedData.Message["fee"].(map[string]interface{}))
 	feePayer := fee["feePayer"]
-	if feePayer != "cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp" {
-		t.Errorf("Invalid fee payer, expected 'cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp' but got %v\n", feePayer)
-	}
+	require.Equal(t, "cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp", feePayer)
 
 	feeGas := fee["gas"]
-	if feeGas != "20000" {
-		t.Errorf("Invalid fee gas, expected '20000' but got %v\n", feeGas)
-	}
+	require.Equal(t, "20000", feeGas)
 
 	feeAmount := fee["amount"].([]interface{})[0].(map[string]interface{})
-	if feeAmount["amount"] != "150" {
-		t.Errorf("Invalid fee amount, expected 150 but got %v\n", feeAmount["amount"])
-	}
-	if feeAmount["denom"] != "atom" {
-		t.Errorf("Invalid fee denom, expected 'atom' but got %v\n", feeAmount["denom"])
-	}
+	require.Equal(t, "150", feeAmount["amount"])
+	require.Equal(t, "atom", feeAmount["denom"])
 
 	memo := typedData.Message["memo"]
-	if memo != "memo" {
-		t.Errorf("Invalid memo, expected 'memo' but got %v\n", memo)
-	}
+	require.Equal(t, "memo", memo)
 
 	msgs := typedData.Message["msgs"].([]interface{})
-	if len(msgs) != 1 {
-		t.Errorf("Invalid number of messages, expected 1 but got %v\n", len(msgs))
-	}
+	require.Len(t, msgs, 1)
 
 	msg := msgs[0].(map[string]interface{})
 	msgType := msg["type"]
 	if msgType != "cosmos-sdk/MsgSend" {
-		t.Errorf("Invalid message type, expected 'cosmos-sdk/MsgSend' but got %v\n", msgType)
+		require.NoError(t, err, "Invalid message type, expected 'cosmos-sdk/MsgSend' but got %v\n", msgType)
 	}
 
 	msgVal := msg["value"].(map[string]interface{})
 	msgAmount := msgVal["amount"].([]interface{})[0].(map[string]interface{})
 	if msgAmount["amount"] != "150" {
-		t.Errorf("Invalid message amount, expected '150' but got %v\n", msgVal["amount"])
+		require.NoError(t, err, "Invalid message amount, expected '150' but got %v\n", msgVal["amount"])
 	}
 
 	if msgAmount["denom"] != "atom" {
-		t.Errorf("Invalid denom, expected 'atom' but got %v\n", msgVal["denom"])
+		require.NoError(t, err, "Invalid denom, expected 'atom' but got %v\n", msgVal["denom"])
 	}
 
 	msgFrom := msgVal["from_address"]
 	if msgFrom != "cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp" {
-		t.Errorf("Invalid message from address, expected 'cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp' but got %v\n", msgFrom)
+		require.NoError(t, err, "Invalid message from address, expected 'cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp' but got %v\n", msgFrom)
 	}
 
 	msgTo := msgVal["to_address"]
 	if msgTo != "cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a" {
-		t.Errorf("Invalid message to address, expected 'cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a' but got %v\n", msgTo)
+		require.NoError(t, err, "Invalid message to address, expected 'cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a' but got %v\n", msgTo)
 	}
 }
 
 func TestSanityDecodeBytes(t *testing.T) {
 	e := newEvmosSecpWithTestConfig()
 	typedData, err := e.decodeAminoSignDoc(getFakeTxAmino())
-	if err != nil {
-		panic(fmt.Sprintf("Failed with err %v\n", err))
-	}
+	require.NoError(t, err)
 
-	fmt.Printf("Typed data %v\n", typedData)
+	t.Logf("Typed data %v\n", typedData)
 }
 
 func TestLedgerAminoSignature(t *testing.T) {
@@ -288,17 +247,13 @@ func TestProtobufTypedData(t *testing.T) {
 	e := newEvmosSecpWithTestConfig()
 	typedData, err := e.decodeProtobufSignDoc(getFakeTxProtobuf(t))
 	require.NoError(t, err, "did not expect to fail decoding Protobuf SignDoc")
-
 	verifyTypedDataFields(t, typedData)
 }
 
 func TestAminoTypedData(t *testing.T) {
 	e := newEvmosSecpWithTestConfig()
 	typedData, err := e.decodeAminoSignDoc(getFakeTxAmino())
-	if err != nil {
-		t.Errorf("Did not expect to fail decoding Amino SignDoc: %v\n", err)
-	}
-
+	require.NoError(t, err, "Did not expect to fail decoding Amino SignDoc")
 	verifyTypedDataFields(t, typedData)
 }
 
@@ -306,122 +261,114 @@ func TestTypedDataEquivalence(t *testing.T) {
 	e := newEvmosSecpWithTestConfig()
 	protobufTypedData, err := e.decodeProtobufSignDoc(getFakeTxProtobuf(t))
 	if err != nil {
-		t.Errorf("Did not expect to fail decoding Amino SignDoc: %v\n", err)
+		require.NoError(t, err, "Did not expect to fail decoding Amino SignDoc: %v\n", err)
 	}
 
 	aminoTypedData, err := e.decodeAminoSignDoc(getFakeTxAmino())
 	if err != nil {
-		t.Errorf("Did not expect to fail decoding Amino SignDoc: %v\n", err)
+		require.NoError(t, err, "Did not expect to fail decoding Amino SignDoc: %v\n", err)
 	}
 
 	if !reflect.DeepEqual(protobufTypedData, aminoTypedData) {
-		t.Errorf("Unequal typed datas, expected equivalence")
+		require.NoError(t, err, "Unequal typed datas, expected equivalence")
 	}
 }
 
 func TestPayloadSignaturesEquivalence(t *testing.T) {
 	deriveLedger := EvmosLedgerDerivation(testConfig())
 	wallet, err := deriveLedger()
-	defer wallet.Close()
+	defer func() {
+		err := wallet.Close()
+		require.NoError(t, err)
+	}()
 
 	if err != nil {
-		t.Errorf("Could not retrieve wallet with error %v\n", err)
+		require.NoError(t, err, "Could not retrieve wallet")
 	}
 
 	protoSignature, err := wallet.SignSECP256K1(accounts.DefaultBaseDerivationPath, getFakeTxProtobuf(t))
 	if err != nil {
-		t.Errorf("Could not sign Protobuf bytes with error %v\n", err)
+		require.NoError(t, err, "Could not sign Protobuf bytes")
 	}
 
 	aminoSignature, err := wallet.SignSECP256K1(accounts.DefaultBaseDerivationPath, getFakeTxAmino())
 	if err != nil {
-		t.Errorf("Could not sign Amino bytes with error %v\n", err)
+		require.NoError(t, err, "Could not sign Amino bytes")
 	}
 
 	if !reflect.DeepEqual(protoSignature, aminoSignature) {
-		t.Errorf("Payload signatures are different, expected the same")
+		require.NoError(t, err, "Payload signatures are different, expected the same")
 	}
 }
 
 func TestGetLedgerAddress(t *testing.T) {
 	deriveLedger := EvmosLedgerDerivation(testConfig())
 	wallet, err := deriveLedger()
-	defer wallet.Close()
+	defer func() {
+		err := wallet.Close()
+		require.NoError(t, err)
+	}()
 
-	if err != nil {
-		t.Errorf("Could not retrieve wallet with error %v\n", err)
-	}
+	require.NoError(t, err, "Could not retrieve wallet")
 
 	pubkey, addr, err := wallet.GetAddressPubKeySECP256K1(accounts.DefaultBaseDerivationPath, "evmos")
-	if err != nil {
-		t.Errorf("Could not get wallet address with error %v\n", err)
-	}
+	require.NoError(t, err, "Could not get wallet address")
+	require.Equal(t, "evmos1hnmrdr0jc2ve3ycxft0gcjjtrdkncpmmkeamf9", addr)
+
+	hex := hex.EncodeToString(pubkey)
+	require.Equal(t,
+		"045f53cbc346997423fe843e2ee6d24fd7832211000a65975ba81d53c87ad1e5c863a5adb3cb919014903f13a68c9a4682b56ff5df3db888a2cbc3dc8fae1ec0fb",
+		hex,
+	)
 
 	t.Logf("Pub Key: %v\n", pubkey)
 	t.Logf("Address: %v\n", addr)
-
-	hex := hex.EncodeToString(pubkey)
-
-	if hex != "045f53cbc346997423fe843e2ee6d24fd7832211000a65975ba81d53c87ad1e5c863a5adb3cb919014903f13a68c9a4682b56ff5df3db888a2cbc3dc8fae1ec0fb" {
-		t.Errorf("Invalid public key (check mnemonic)")
-	}
-
-	if addr != "evmos1hnmrdr0jc2ve3ycxft0gcjjtrdkncpmmkeamf9" {
-		t.Errorf("Invalid address (check mnemonic)")
-	}
 }
 
 func TestGetLedgerPubkey(t *testing.T) {
 	deriveLedger := EvmosLedgerDerivation(testConfig())
 	wallet, err := deriveLedger()
-	defer wallet.Close()
+	defer func() {
+		err := wallet.Close()
+		require.NoError(t, err)
+	}()
 
-	if err != nil {
-		t.Errorf("Could not retrieve wallet with error %v\n", err)
-	}
+	require.NoError(t, err, "Could not retrieve wallet")
 
 	pubkey, err := wallet.GetPublicKeySECP256K1(accounts.DefaultBaseDerivationPath)
-	if err != nil {
-		t.Errorf("Could not get wallet address with error %v\n", err)
-	}
+	require.NoError(t, err, "Could not get wallet address")
 
 	hex := hex.EncodeToString(pubkey)
-
-	if hex != "045f53cbc346997423fe843e2ee6d24fd7832211000a65975ba81d53c87ad1e5c863a5adb3cb919014903f13a68c9a4682b56ff5df3db888a2cbc3dc8fae1ec0fb" {
-		t.Errorf("Invalid public key (check mnemonic)")
-	}
+	require.Equal(t,
+		"045f53cbc346997423fe843e2ee6d24fd7832211000a65975ba81d53c87ad1e5c863a5adb3cb919014903f13a68c9a4682b56ff5df3db888a2cbc3dc8fae1ec0fb",
+		hex,
+	)
 }
 
 // Get the address and public key for a different HD Path
 func TestGetAltLedgerAddress(t *testing.T) {
 	deriveLedger := EvmosLedgerDerivation(testConfig())
 	wallet, err := deriveLedger()
-	defer wallet.Close()
+	defer func() {
+		err := wallet.Close()
+		require.NoError(t, err)
+	}()
 
-	if err != nil {
-		t.Errorf("Could not retrieve wallet with error %v\n", err)
-	}
+	require.NoError(t, err, "could not retrieve wallet")
 
 	path, err := accounts.ParseDerivationPath("m/44'/60'/0'/0/1")
-	if err != nil {
-		panic(fmt.Sprintf("Could not parse derivation path with error: %v\n", err))
-	}
+	require.NoError(t, err, "could not parse derivation path")
 
 	pubkey, addr, err := wallet.GetAddressPubKeySECP256K1(path, "evmos")
-	if err != nil {
-		t.Errorf("Could not get wallet address with error %v\n", err)
-	}
+	require.NoError(t, err, "could not get wallet address")
+	require.Equal(t, "evmos12um6vtmgxpwsm9zkf0khnux4x3ldcpswnkqz3s", addr)
+
+	hex := hex.EncodeToString(pubkey)
+	require.Equal(t,
+		"044a5236e77ab81e094d7c6cfeac06d2e93fec455d01c7f80e22c592a89b44acebe99c2450425a184e5382362d5c52f5d996f12e73ccfb7694227f31b501e36ed7",
+		hex,
+	)
 
 	t.Logf("Pub Key: %v\n", pubkey)
 	t.Logf("Address: %v\n", addr)
-
-	hex := hex.EncodeToString(pubkey)
-
-	if hex != "044a5236e77ab81e094d7c6cfeac06d2e93fec455d01c7f80e22c592a89b44acebe99c2450425a184e5382362d5c52f5d996f12e73ccfb7694227f31b501e36ed7" {
-		t.Errorf("Invalid public key (check mnemonic)")
-	}
-
-	if addr != "evmos12um6vtmgxpwsm9zkf0khnux4x3ldcpswnkqz3s" {
-		t.Errorf("Invalid address (check mnemonic)")
-	}
 }
