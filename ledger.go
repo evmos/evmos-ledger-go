@@ -6,28 +6,20 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/btcsuite/btcutil/bech32"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ethereum/go-ethereum/crypto"
 	apitypes "github.com/ethereum/go-ethereum/signer/core/apitypes"
-	ethLedger "github.com/evmos/ethereum-ledger-go"
-	"github.com/evmos/ethereum-ledger-go/accounts"
+
 	"github.com/evmos/ethermint/ethereum/eip712"
+	"github.com/evmos/evmos-ledger-go/accounts"
+	"github.com/evmos/evmos-ledger-go/usbwallet"
 )
 
-type SECP256K1 interface {
-	Close() error
-	// Returns an uncompressed pubkey
-	GetPublicKeySECP256K1([]uint32) ([]byte, error)
-	// Returns a compressed pubkey and bech32 address (requires user confirmation)
-	GetAddressPubKeySECP256K1([]uint32, string) ([]byte, string, error)
-	// Signs a message (requires user confirmation)
-	SignSECP256K1([]uint32, []byte) ([]byte, error)
-}
-
 // LedgerDerivation defines the derivation function used on the Cosmos SDK Keyring.
-type LedgerDerivation func() (SECP256K1, error)
+type LedgerDerivationFn func() (SECP256K1, error)
 
-func EvmosLedgerDerivation() LedgerDerivation {
+func EvmosLedgerDerivation() LedgerDerivationFn {
 	evmosSECP256K1 := new(EvmosSECP256K1)
 
 	return func() (SECP256K1, error) {
@@ -40,7 +32,7 @@ var _ SECP256K1 = &EvmosSECP256K1{}
 // EvmosSECP256K1 defines a wrapper of the Ethereum App to
 // for compatibility with Cosmos SDK chains.
 type EvmosSECP256K1 struct {
-	ledger        *ethLedger.EthereumLedger
+	*usbwallet.Hub
 	primaryWallet accounts.Wallet
 }
 
@@ -69,7 +61,9 @@ func (e EvmosSECP256K1) GetPublicKeySECP256K1(hdPath []uint32) ([]byte, error) {
 		return []byte{}, errors.New("unable to derive public key, please retry")
 	}
 
-	return account.PublicKey.Bytes(), nil
+	pubkeyBz := crypto.FromECDSAPub(account.PublicKey)
+
+	return pubkeyBz, nil
 }
 
 // hrp "Human Readable Part" e.g. evmos
@@ -86,17 +80,14 @@ func (e EvmosSECP256K1) GetAddressPubKeySECP256K1(hdPath []uint32, hrp string) (
 		return []byte{}, "", errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
 	}
 
-	bech32AddressBytes, err := bech32.ConvertBits(account.Address.Bytes(), 8, 5, true)
+	address, err := sdk.Bech32ifyAddressBytes(hrp, account.Address.Bytes())
 	if err != nil {
-		return []byte{}, "", fmt.Errorf("unable to convert address to 32-bit representation: %w", err)
+		return []byte{}, "", err
 	}
 
-	address, err := bech32.Encode(hrp, bech32AddressBytes)
-	if err != nil {
-		return []byte{}, "", fmt.Errorf("unable to encode address as bech32: %w", err)
-	}
+	pubkeyBz := crypto.FromECDSAPub(account.PublicKey)
 
-	return account.PublicKey.Bytes(), address, nil
+	return pubkeyBz, address, nil
 }
 
 func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]byte, error) {
@@ -156,7 +147,7 @@ func (e EvmosSECP256K1) displayEIP712Hash(typedData apitypes.TypedData) error {
 
 func (e *EvmosSECP256K1) connectToLedgerApp() (SECP256K1, error) {
 	// Instantiate new Ledger object
-	ledger, err := ethLedger.New()
+	ledger, err := usbwallet.NewLedgerHub()
 	if err != nil {
 		return nil, err
 	}
@@ -165,8 +156,8 @@ func (e *EvmosSECP256K1) connectToLedgerApp() (SECP256K1, error) {
 		return nil, errors.New("no hardware wallets detected")
 	}
 
-	e.ledger = ledger
-	wallets := e.ledger.Wallets()
+	e.Hub = ledger
+	wallets := e.Wallets()
 
 	// No wallets detected; throw an error
 	if len(wallets) == 0 {
