@@ -1,0 +1,14 @@
+"Type: Build":
+  - Makefile
+  - Dockerfile
+  - docker-compose.yml
+  - scripts/*
+  - config.yml
+"Type: CI":
+  - .github/**/*.yml
+  - buf.yaml
+  - .mergify.yml
+  - .golangci.yml
+"Type: Tests":
+  - tests/**/*
+  - /**/*/*_test.go

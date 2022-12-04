@@ -24,10 +24,10 @@ type SECP256K1 interface {
 	SignSECP256K1([]uint32, []byte) ([]byte, error)
 }
 
-// LedgerDerivation defines the derivation function used on the Cosmos SDK Keyring.
-type LedgerDerivation func() (SECP256K1, error)
+// Secp256k1DerivationFn defines the derivation function used on the Cosmos SDK Keyring.
+type Secp256k1DerivationFn func() (SECP256K1, error)
 
-func EvmosLedgerDerivation() LedgerDerivation {
+func EvmosLedgerDerivation() Secp256k1DerivationFn {
 	evmosSECP256K1 := new(EvmosSECP256K1)
 
 	return func() (SECP256K1, error) {
