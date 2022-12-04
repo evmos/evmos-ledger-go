@@ -29,5 +29,5 @@ jobs:
             go.mod
             go.sum
       - run: |
-          make build
+          go build ./...
         if: env.GIT_DIFF

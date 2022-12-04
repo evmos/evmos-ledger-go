@@ -65,7 +65,7 @@ build_tags_comma_sep := $(subst $(whitespace),$(comma),$(build_tags))
 
 BUILD_TARGETS := build install
 
-build: BUILD_ARGS=-o $(BUILDDIR)/
+build: go build ./...
 build-linux:
 	GOOS=linux GOARCH=amd64 LEDGER_ENABLED=false $(MAKE) build
 
@@ -74,8 +74,6 @@ $(BUILD_TARGETS): go.sum $(BUILDDIR)/
 
 $(BUILDDIR)/:
 	mkdir -p $(BUILDDIR)/
-
-
 
 $(MOCKS_DIR):
 	mkdir -p $(MOCKS_DIR)
@@ -120,10 +118,6 @@ TEST_TARGETS := test-unit test-unit-cover test-race
 # append the new rule to the TEST_TARGETS list.
 test-unit: ARGS=-timeout=15m -race
 test-unit: TEST_PACKAGES=$(PACKAGES_UNIT)
-
-test-race: ARGS=-race
-test-race: TEST_PACKAGES=$(PACKAGES_NOSIMULATION)
-$(TEST_TARGETS): run-tests
 
 test-unit-cover: ARGS=-timeout=15m -race -coverprofile=coverage.txt -covermode=atomic
 test-unit-cover: TEST_PACKAGES=$(PACKAGES_UNIT)
