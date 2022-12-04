@@ -12,5 +12,3 @@
 "Type: Tests":
   - tests/**/*
   - /**/*/*_test.go
-"Type: Docs":
-  - docs/**/*

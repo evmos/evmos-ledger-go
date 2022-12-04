@@ -42,8 +42,7 @@ jobs:
       - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
-            docs/**/*.md
-            README.md
+            **/**.md
       - uses: nosborn/github-action-markdown-cli@v3.2.0
         with:
           files: .

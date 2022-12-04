@@ -30,4 +30,4 @@ tests/
 .semgrep_logs/
 
 # Documentation
-client/docs/
+*.md
