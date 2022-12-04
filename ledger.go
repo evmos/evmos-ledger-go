@@ -16,10 +16,10 @@ import (
 	"github.com/evmos/evmos-ledger-go/usbwallet"
 )
 
-// LedgerDerivation defines the derivation function used on the Cosmos SDK Keyring.
-type LedgerDerivationFn func() (SECP256K1, error)
+// Secp256k1DerivationFn defines the derivation function used on the Cosmos SDK Keyring.
+type Secp256k1DerivationFn func() (SECP256K1, error)
 
-func EvmosLedgerDerivation() LedgerDerivationFn {
+func EvmosLedgerDerivation() Secp256k1DerivationFn {
 	evmosSECP256K1 := new(EvmosSECP256K1)
 
 	return func() (SECP256K1, error) {
