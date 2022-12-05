@@ -32,7 +32,7 @@ const (
 	// LedgerScheme is the protocol scheme prefixing account and wallet URLs.
 	LedgerScheme = "ledger"
 
-	// onLinux is a boolean value to check if the operating system is linux-based.
+	// onLinux is a boolean value to check if the operating system is Linux-based.
 	onLinux = runtime.GOOS == "linux"
 
 	// refreshThrottling is the minimum time between wallet refreshes to avoid USB
@@ -42,7 +42,7 @@ const (
 
 var _ accounts.Backend = &Hub{}
 
-// Hub is a accounts.Backend that can find and handle generic USB hardware wallets.
+// Hub is an accounts.Backend that can find and handle generic USB hardware wallets.
 type Hub struct {
 	scheme     string        // Protocol scheme prefixing account and wallet URLs.
 	vendorID   uint16        // USB vendor identifier used for device discovery
@@ -112,7 +112,7 @@ func newHub(scheme string, vendorID uint16, productIDs []uint16, usageID uint16,
 // Wallets implements accounts.Backend, returning all the currently tracked USB
 // devices that appear to be hardware wallets.
 func (hub *Hub) Wallets() []accounts.Wallet {
-	// Make sure the list of wallets is up to date
+	// Make sure the list of wallets is up-to-date
 	hub.refreshWallets()
 
 	hub.stateLock.RLock()
@@ -146,7 +146,7 @@ func (hub *Hub) refreshWallets() {
 	if onLinux {
 		// hidapi on Linux opens the device during enumeration to retrieve some infos,
 		// breaking the Ledger protocol if that is waiting for user confirmation. This
-		// is a bug acknowledged at Ledger, but it won't be fixed on old devices so we
+		// is a bug acknowledged at Ledger, but it won't be fixed on old devices, so we
 		// need to prevent concurrent comms ourselves. The more elegant solution would
 		// be to ditch enumeration in favor of hotplug events, but that don't work yet
 		// on Windows so if we need to hack it anyway, this is more elegant for now.
@@ -168,7 +168,7 @@ func (hub *Hub) refreshWallets() {
 
 	for _, info := range infos {
 		for _, id := range hub.productIDs {
-			// Windows and MacOS use UsageID matching, Linux uses Interface matching
+			// Windows and macOS use UsageID matching, Linux uses Interface matching
 			if info.ProductID == id && (info.UsagePage == hub.usageID || info.Interface == hub.endpointID) {
 				devices = append(devices, info)
 				break

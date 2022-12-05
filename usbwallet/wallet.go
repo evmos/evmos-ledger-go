@@ -86,10 +86,10 @@ type wallet struct {
 	healthQuit chan chan error
 
 	// Locking a hardware wallet is a bit special. Since hardware devices are lower
-	// performing, any communication with them might take a non negligible amount of
+	// performing, any communication with them might take a non-negligible amount of
 	// time. Worse still, waiting for user confirmation can take arbitrarily long,
 	// but exclusive communication must be upheld during. Locking the entire wallet
-	// in the mean time however would stall any parts of the system that don't want
+	// in the meantime however would stall any parts of the system that don't want
 	// to communicate, just read some state (e.g. list the accounts).
 	//
 	// As such, a hardware wallet needs two locks to function correctly. A state
@@ -266,7 +266,7 @@ func (w *wallet) Accounts() []accounts.Account {
 
 // Contains implements accounts.Wallet, returning whether a particular account is
 // or is not pinned into this wallet instance. Although we could attempt to resolve
-// unpinned accounts, that would be an non-negligible hardware operation.
+// unpinned accounts, that would be a non-negligible hardware operation.
 func (w *wallet) Contains(account accounts.Account) bool {
 	w.stateLock.RLock()
 	defer w.stateLock.RUnlock()
@@ -331,7 +331,7 @@ func formatPathIfNeeded(path gethaccounts.DerivationPath) {
 
 // signHash implements accounts.Wallet, however signing arbitrary data is not
 // supported for hardware wallets, so this method will always return an error.
-func (w *wallet) signHash(account accounts.Account, hash []byte) ([]byte, error) {
+func (w *wallet) signHash(_ accounts.Account, _ []byte) ([]byte, error) {
 	return nil, gethaccounts.ErrNotSupported
 }
 
