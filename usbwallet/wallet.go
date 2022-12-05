@@ -378,10 +378,6 @@ func (w *wallet) signData(account accounts.Account, mimeType string, data []byte
 	return signature, nil
 }
 
-func (w *wallet) signText(account accounts.Account, text []byte) ([]byte, error) {
-	return w.signHash(account, gethaccounts.TextHash(text))
-}
-
 // SignTx implements accounts.Wallet. It sends the transaction over to the Ledger
 // wallet to request a confirmation from the user. It returns either the signed
 // transaction or a failure if the user denied the transaction.
