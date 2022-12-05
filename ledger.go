@@ -29,14 +29,14 @@ func EvmosLedgerDerivation() Secp256k1DerivationFn {
 
 var _ SECP256K1 = &EvmosSECP256K1{}
 
-// for compatibility with Cosmos SDK chains.
+// EvmosSECP256K1 defines a wrapper of the Ethereum App for compatibility with Cosmos SDK chains.
 type EvmosSECP256K1 struct {
 	*usbwallet.Hub
 	primaryWallet accounts.Wallet
 }
 
-// Closes the associated primary wallet. Any requests on
-// the object after a successful Close() should not work
+// Close is a wrapper method to close the associated primary wallet.
+// Any requests on the object after a successful Close() should not work.
 func (e EvmosSECP256K1) Close() error {
 	if e.primaryWallet == nil {
 		return errors.New("could not close Ledger: no wallet found")
@@ -45,8 +45,8 @@ func (e EvmosSECP256K1) Close() error {
 	return e.primaryWallet.Close()
 }
 
-// Return the public key associated with the address derived from
-// the provided hdPath using the primary wallet
+// GetPublicKeySECP256K1 returns the public key associated with the address derived from
+// the provided hdPath using the primary wallet.
 func (e EvmosSECP256K1) GetPublicKeySECP256K1(hdPath []uint32) ([]byte, error) {
 	if e.primaryWallet == nil {
 		return []byte{}, errors.New("could not get Ledger public key: no wallet found")
@@ -65,7 +65,8 @@ func (e EvmosSECP256K1) GetPublicKeySECP256K1(hdPath []uint32) ([]byte, error) {
 	return pubkeyBz, nil
 }
 
-// hrp "Human Readable Part" e.g. evmos
+// GetAddressPubKeySECP256K1 takes in the HD path as well as a "Human Readable Prefix" (HRP, e.g. "evmos")
+// to return the public key bytes in secp256k1 format as well as the account address.
 func (e EvmosSECP256K1) GetAddressPubKeySECP256K1(hdPath []uint32, hrp string) ([]byte, string, error) {
 	if e.primaryWallet == nil {
 		return []byte{}, "", errors.New("could not get Ledger address: no wallet found")
@@ -89,6 +90,8 @@ func (e EvmosSECP256K1) GetAddressPubKeySECP256K1(hdPath []uint32, hrp string) (
 	return pubkeyBz, address, nil
 }
 
+// SignSECP256K1 returns the signature bytes generated from signing a transaction
+// using the EIP712 signature.
 func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]byte, error) {
 	fmt.Printf("Generating payload, please check your Ledger...\n")
 
@@ -96,7 +99,7 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 		return []byte{}, errors.New("unable to sign with Ledger: no wallet found")
 	}
 
-	// Re-open wallet in case it was closed. Since this error occurs if the wallet is already open,
+	// Re-open wallet in case it was closed. Since an error occurs if the wallet is already open,
 	// ignore the error. Any errors due to the wallet being closed will surface later on.
 	_ = e.primaryWallet.Open("")
 
@@ -125,8 +128,8 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 	return signature, nil
 }
 
-// Helper function to display the EIP-712 hashes; this allows users to verify the hashed message
-// they are signing via Ledger.
+// displayEIP712Hash is a helper function to display the EIP-712 hashes.
+// This allows users to verify the hashed message they are signing via Ledger.
 func (e EvmosSECP256K1) displayEIP712Hash(typedData apitypes.TypedData) error {
 	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
 	if err != nil {
@@ -176,6 +179,8 @@ func (e *EvmosSECP256K1) connectToLedgerApp() (SECP256K1, error) {
 	return e, nil
 }
 
+// bytesToHexString is a helper function to convert a slice of bytes to a
+// string in hex-format.
 func bytesToHexString(bytes []byte) string {
 	return "0x" + strings.ToUpper(hex.EncodeToString(bytes))
 }
