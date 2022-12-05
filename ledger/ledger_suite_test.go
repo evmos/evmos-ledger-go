@@ -1,8 +1,12 @@
-package ledger
+package ledger_test
 
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/evmos/evmos-ledger-go/ledger"
+	"github.com/evmos/evmos-ledger-go/ledger/mocks"
+	"github.com/evmos/evmos-ledger-go/usbwallet"
+	"github.com/stretchr/testify/suite"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -19,16 +23,45 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newPubKey(t *testing.T, pk string) (res cryptoTypes.PubKey) {
+type LedgerTestSuite struct {
+	suite.Suite
+	pubKey                cryptoTypes.PubKey
+	txAmino               []byte
+	txProtobuf            []byte
+	mockLedger            *mocks.SECP256K1
+	ledger                ledger.SECP256K1
+	secp256k1DerivationFn *ledger.Secp256k1DerivationFn
+}
+
+func TestLedgerTestSuite(t *testing.T) {
+	suite.Run(t, new(LedgerTestSuite))
+}
+
+func (suite *LedgerTestSuite) SetupTest() {
+	suite.pubKey = suite.newPubKey("045f53cbc346997423fe843e2ee6d24fd7832211000a65975ba81d53c87ad1e5c863a5adb3cb919014903f13a68c9a4682b56ff5df3db888a2cbc3dc8fae1ec0fb")
+	suite.txAmino = suite.getMockTxAmino()
+	suite.txProtobuf = suite.getMockTxProtobuf()
+
+	hub, err := usbwallet.NewLedgerHub()
+	suite.Require().NoError(err)
+
+	suite.mockLedger = mocks.NewSECP256K1(suite.T())
+	suite.ledger = ledger.EvmosSECP256K1{
+		Hub: hub,
+		//primaryWallet: mocks.NewWallet(suite.T()),
+	}
+}
+
+func (suite *LedgerTestSuite) newPubKey(pk string) (res cryptoTypes.PubKey) {
 	pkBytes, err := hex.DecodeString(pk)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	pubkey := &ed25519.PubKey{Key: pkBytes}
 
 	return pubkey
 }
 
-func getFakeTxAmino() []byte {
+func (suite *LedgerTestSuite) getMockTxAmino() []byte {
 	tmp := fmt.Sprintf(
 		`{"account_number":"0","chain_id":"evmos_9000-1","fee":{"amount":[{"amount":"150","denom":"atom"}],"gas":"20000"},"memo":"memo","msgs":[{"type":"cosmos-sdk/MsgSend","value":{"amount":[{"amount":"150","denom":"atom"}],"from_address":"cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp","to_address":"cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a"}}],"sequence":"6"}`,
 	)
@@ -36,7 +69,7 @@ func getFakeTxAmino() []byte {
 	return []byte(tmp)
 }
 
-func getFakeTxProtobuf(t *testing.T) []byte {
+func (suite *LedgerTestSuite) getMockTxProtobuf() []byte {
 	marshaler := codec.NewProtoCodec(codecTypes.NewInterfaceRegistry())
 
 	memo := "memo"
@@ -52,7 +85,7 @@ func getFakeTxProtobuf(t *testing.T) []byte {
 	)
 
 	msgAsAny, err := codecTypes.NewAnyWithValue(msg)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	body := &txTypes.TxBody{
 		Messages: [](*codecTypes.Any){
@@ -61,10 +94,10 @@ func getFakeTxProtobuf(t *testing.T) []byte {
 		Memo: memo,
 	}
 
-	pubKey := newPubKey(t, "0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB50")
+	pubKey := suite.newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB50")
 
 	pubKeyAsAny, err := codecTypes.NewAnyWithValue(pubKey)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	signingMode := txTypes.ModeInfo_Single_{
 		Single: &txTypes.ModeInfo_Single{
@@ -96,7 +129,7 @@ func getFakeTxProtobuf(t *testing.T) []byte {
 		"evmos_9000-1",
 		0,
 	)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	return signBytes
 }
