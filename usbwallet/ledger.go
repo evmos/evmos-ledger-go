@@ -161,6 +161,7 @@ func (w *ledgerDriver) SignTx(path gethaccounts.DerivationPath, tx *coretypes.Tr
 	}
 	// Ensure the wallet is capable of signing the given transaction
 	if chainID != nil && w.version[0] <= 1 && w.version[1] <= 0 && w.version[2] <= 2 {
+		//nolint:stylecheck // ST1005 requires error strings to be lowercase but Ledger as a brand name should start with a capital letter
 		return common.Address{}, nil, fmt.Errorf("Ledger v%d.%d.%d doesn't support signing this transaction, please update to v1.0.3 at least", w.version[0], w.version[1], w.version[2])
 	}
 
@@ -184,6 +185,7 @@ func (w *ledgerDriver) SignTypedMessage(path gethaccounts.DerivationPath, domain
 	}
 	// Ensure the wallet is capable of signing the given transaction
 	if w.version[0] < 1 && w.version[1] < 5 {
+		//nolint:stylecheck // ST1005 requires error strings to be lowercase but Ledger as a brand name should start with a capital letter
 		return nil, fmt.Errorf("Ledger version >= 1.5.0 required for EIP-712 signing (found version v%d.%d.%d)", w.version[0], w.version[1], w.version[2])
 	}
 	// All infos gathered and metadata checks out, request signing
