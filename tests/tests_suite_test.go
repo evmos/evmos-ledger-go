@@ -8,11 +8,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
-	"github.com/evmos/evmos-ledger-go/ledger"
 
 	gethaccounts "github.com/ethereum/go-ethereum/accounts"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/evmos/evmos-ledger-go/accounts"
+	"github.com/evmos/evmos-ledger-go/ledger"
 	"github.com/evmos/evmos-ledger-go/usbwallet"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -25,7 +25,9 @@ var s *LedgerTestSuite
 type LedgerTestSuite struct {
 	suite.Suite
 
-	ledger *ledger.EvmosSECP256K1
+	wrapper *ledger.EvmosSECP256K1
+
+	account accounts.Account
 }
 
 func TestLedgerTestSuite(t *testing.T) {
@@ -33,25 +35,33 @@ func TestLedgerTestSuite(t *testing.T) {
 	RunSpecs(t, "Tests Suite")
 }
 
-var _ = Describe("Ledger CLI", Ordered, func() {
+func (suite *LedgerTestSuite) SetupSuite() {
+	hub, err := usbwallet.NewLedgerHub()
+	suite.Require().NoError(err)
 
-})
+	wallet, account := initWallet(suite.T(), gethaccounts.DefaultBaseDerivationPath, hub)
+	// FIXME
+	_ = wallet
+	wrapper := &ledger.EvmosSECP256K1{}
+
+	s = &LedgerTestSuite{
+		wrapper: wrapper,
+		account: account,
+	}
+}
 
 // Test Mnemonic:
 // glow spread dentist swamp people siren hint muscle first sausage castle metal
 // cycle abandon accident logic again around mix dial knee organ episode usual
 // (24 words)
 
-func initWallet(t *testing.T, path gethaccounts.DerivationPath) (accounts.Wallet, accounts.Account) {
+func initWallet(t *testing.T, path gethaccounts.DerivationPath, ledger *usbwallet.Hub) (accounts.Wallet, accounts.Account) {
 	t.Helper()
-
-	ledger, err := usbwallet.NewLedgerHub()
-	require.NoError(t, err)
 
 	require.NotZero(t, len(ledger.Wallets()))
 
 	wallet := ledger.Wallets()[0]
-	err = wallet.Open("")
+	err := wallet.Open("")
 	require.NoError(t, err)
 
 	account, err := wallet.Derive(path, true)
