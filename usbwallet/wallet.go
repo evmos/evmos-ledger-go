@@ -66,6 +66,8 @@ type driver interface {
 	// or deny the transaction.
 	SignTx(path gethaccounts.DerivationPath, tx *coretypes.Transaction, chainID *big.Int) (common.Address, []byte, error)
 
+	// SignTypedMessage sends the message to the Ledger and waits for the user to sign
+	// or deny the transaction.
 	SignTypedMessage(path gethaccounts.DerivationPath, messageHash []byte, domainHash []byte) ([]byte, error)
 }
 
@@ -302,7 +304,6 @@ func (w *wallet) Derive(path gethaccounts.DerivationPath, pin bool) (accounts.Ac
 	account := accounts.Account{
 		Address:   address,
 		PublicKey: publicKey,
-		URL:       gethaccounts.URL{Scheme: w.url.Scheme, Path: fmt.Sprintf("%s/%s", w.url.Path, path)},
 	}
 	if !pin {
 		return account, nil
