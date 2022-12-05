@@ -28,16 +28,17 @@ import (
 	usb "github.com/zondax/hid"
 )
 
-// LedgerScheme is the protocol scheme prefixing account and wallet URLs.
-const LedgerScheme = "ledger"
+const (
+	// LedgerScheme is the protocol scheme prefixing account and wallet URLs.
+	LedgerScheme = "ledger"
 
-// refreshCycle is the maximum time between wallet refreshes (if USB hotplug
-// notifications don't work).
-const refreshCycle = time.Second
+	// onLinux is a boolean value to check if the operating system is linux-based.
+	onLinux = runtime.GOOS == "linux"
 
-// refreshThrottling is the minimum time between wallet refreshes to avoid USB
-// trashing.
-const refreshThrottling = 500 * time.Millisecond
+	// refreshThrottling is the minimum time between wallet refreshes to avoid USB
+	// trashing.
+	refreshThrottling = 500 * time.Millisecond
+)
 
 var _ accounts.Backend = &Hub{}
 
@@ -142,7 +143,7 @@ func (hub *Hub) refreshWallets() {
 	// Retrieve the current list of USB wallet devices
 	var devices []usb.DeviceInfo
 
-	if runtime.GOOS == "linux" {
+	if onLinux {
 		// hidapi on Linux opens the device during enumeration to retrieve some infos,
 		// breaking the Ledger protocol if that is waiting for user confirmation. This
 		// is a bug acknowledged at Ledger, but it won't be fixed on old devices so we
@@ -157,7 +158,7 @@ func (hub *Hub) refreshWallets() {
 	}
 	infos := usb.Enumerate(hub.vendorID, 0)
 	if infos == nil {
-		if runtime.GOOS == "linux" {
+		if onLinux {
 			// See rationale before the enumeration why this is needed and only on Linux.
 			hub.commsLock.Unlock()
 		}
@@ -167,7 +168,7 @@ func (hub *Hub) refreshWallets() {
 
 	for _, info := range infos {
 		for _, id := range hub.productIDs {
-			// Windows and Macos use UsageID matching, Linux uses Interface matching
+			// Windows and MacOS use UsageID matching, Linux uses Interface matching
 			if info.ProductID == id && (info.UsagePage == hub.usageID || info.Interface == hub.endpointID) {
 				devices = append(devices, info)
 				break
@@ -175,7 +176,7 @@ func (hub *Hub) refreshWallets() {
 		}
 	}
 
-	if runtime.GOOS == "linux" {
+	if onLinux {
 		// See rationale before the enumeration why this is needed and only on Linux.
 		hub.commsLock.Unlock()
 	}
