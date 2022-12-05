@@ -29,7 +29,6 @@ func EvmosLedgerDerivation() Secp256k1DerivationFn {
 
 var _ SECP256K1 = &EvmosSECP256K1{}
 
-// EvmosSECP256K1 defines a wrapper of the Ethereum App to
 // for compatibility with Cosmos SDK chains.
 type EvmosSECP256K1 struct {
 	*usbwallet.Hub
@@ -97,7 +96,7 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 		return []byte{}, errors.New("unable to sign with Ledger: no wallet found")
 	}
 
-	// Re-open wallet in case it was closed. Since this errors if the wallet is already open,
+	// Re-open wallet in case it was closed. Since this error occurs if the wallet is already open,
 	// ignore the error. Any errors due to the wallet being closed will surface later on.
 	_ = e.primaryWallet.Open("")
 
