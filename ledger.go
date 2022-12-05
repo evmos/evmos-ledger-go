@@ -9,7 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	apitypes "github.com/ethereum/go-ethereum/signer/core/apitypes"
+	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 
 	"github.com/evmos/ethermint/ethereum/eip712"
 	"github.com/evmos/evmos-ledger-go/accounts"
@@ -49,7 +49,7 @@ func (e EvmosSECP256K1) Close() error {
 // the provided hdPath using the primary wallet.
 func (e EvmosSECP256K1) GetPublicKeySECP256K1(hdPath []uint32) ([]byte, error) {
 	if e.primaryWallet == nil {
-		return []byte{}, errors.New("could not get Ledger public key: no wallet found")
+		return nil, errors.New("could not get Ledger public key: no wallet found")
 	}
 
 	// Re-open wallet in case it was closed. Do not handle the error here (see SignSECP256K1)
@@ -57,7 +57,7 @@ func (e EvmosSECP256K1) GetPublicKeySECP256K1(hdPath []uint32) ([]byte, error) {
 
 	account, err := e.primaryWallet.Derive(hdPath, true)
 	if err != nil {
-		return []byte{}, errors.New("unable to derive public key, please retry")
+		return nil, errors.New("unable to derive public key, please retry")
 	}
 
 	pubkeyBz := crypto.FromECDSAPub(account.PublicKey)
@@ -69,7 +69,7 @@ func (e EvmosSECP256K1) GetPublicKeySECP256K1(hdPath []uint32) ([]byte, error) {
 // to return the public key bytes in secp256k1 format as well as the account address.
 func (e EvmosSECP256K1) GetAddressPubKeySECP256K1(hdPath []uint32, hrp string) ([]byte, string, error) {
 	if e.primaryWallet == nil {
-		return []byte{}, "", errors.New("could not get Ledger address: no wallet found")
+		return nil, "", errors.New("could not get Ledger address: no wallet found")
 	}
 
 	// Re-open wallet in case it was closed. Ignore the error here (see SignSECP256K1)
@@ -77,12 +77,12 @@ func (e EvmosSECP256K1) GetAddressPubKeySECP256K1(hdPath []uint32, hrp string) (
 
 	account, err := e.primaryWallet.Derive(hdPath, true)
 	if err != nil {
-		return []byte{}, "", errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
+		return nil, "", errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
 	}
 
 	address, err := sdk.Bech32ifyAddressBytes(hrp, account.Address.Bytes())
 	if err != nil {
-		return []byte{}, "", err
+		return nil, "", err
 	}
 
 	pubkeyBz := crypto.FromECDSAPub(account.PublicKey)
@@ -96,7 +96,7 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 	fmt.Printf("Generating payload, please check your Ledger...\n")
 
 	if e.primaryWallet == nil {
-		return []byte{}, errors.New("unable to sign with Ledger: no wallet found")
+		return nil, errors.New("unable to sign with Ledger: no wallet found")
 	}
 
 	// Re-open wallet in case it was closed. Since an error occurs if the wallet is already open,
@@ -106,12 +106,12 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 	// Derive requested account
 	account, err := e.primaryWallet.Derive(hdPath, true)
 	if err != nil {
-		return []byte{}, errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
+		return nil, errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
 	}
 
 	typedData, err := eip712.GetEIP712TypedDataForMsg(signDocBytes)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
 	// Display EIP-712 message hash for user to verify
@@ -122,7 +122,7 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 	// Sign with EIP712 signature
 	signature, err := e.primaryWallet.SignTypedData(account, typedData)
 	if err != nil {
-		return []byte{}, fmt.Errorf("error generating signature, please retry: %w", err)
+		return nil, fmt.Errorf("error generating signature, please retry: %w", err)
 	}
 
 	return signature, nil

@@ -106,11 +106,11 @@ func createTypedDataPayload(message map[string]interface{}) apitypes.TypedData {
 	}
 }
 
-// Test transaction is generated correctly using CreateTx
+// Test transaction is generated correctly using createTx
 func TestSanityCreateTx(t *testing.T) {
 	addr := "0x3535353535353535353535353535353535353535"
 
-	tx, err := CreateTx(
+	tx, err := createTx(
 		3,               // Nonce
 		addr,            // To
 		10,              // Gas
@@ -150,7 +150,7 @@ func TestInvalidAccount(t *testing.T) {
 	account.Address = common.HexToAddress("0x3535353535353535353535353535353535353535")
 
 	sendAddr := "0x3636363636363636363636363636363636363636"
-	tx, err := CreateTx(
+	tx, err := createTx(
 		3, sendAddr, 10, big.NewInt(10), big.NewInt(10), make([]byte, 0),
 	)
 	require.NoError(t, err)
@@ -179,7 +179,7 @@ func TestLedgerSignTx1(t *testing.T) {
 
 	addr := "0x3535353535353535353535353535353535353535"
 
-	tx, err := CreateTx(
+	tx, err := createTx(
 		3, addr, 10, big.NewInt(10), big.NewInt(10), make([]byte, 0),
 	)
 	require.NoError(t, err)
@@ -199,7 +199,7 @@ func TestLedgerSignTx2(t *testing.T) {
 
 	addr := "0x4646464646464646464646464646464646464646"
 
-	tx, err := CreateTx(
+	tx, err := createTx(
 		8, addr, 50, big.NewInt(5), big.NewInt(70), []byte{4, 6, 8, 10},
 	)
 	require.NoError(t, err)
@@ -220,7 +220,7 @@ func TestLedgerSignTx3(t *testing.T) {
 
 	addr := "0x4646464646464646464646464646464646464646"
 
-	tx, err := CreateTx(
+	tx, err := createTx(
 		8, addr, 50, big.NewInt(5), big.NewInt(70), []byte{4, 6, 8, 10},
 	)
 	require.NoError(t, err)
@@ -245,7 +245,7 @@ func TestLedgerSignTx4(t *testing.T) {
 	defer wallet.Close()
 
 	sendAddr := "0x4646464646464646464646464646464646464646"
-	tx, err := CreateTx(
+	tx, err := createTx(
 		8, sendAddr, 50, big.NewInt(5), big.NewInt(70), []byte{4, 6, 8, 10},
 	)
 	require.NoError(t, err)
@@ -343,7 +343,7 @@ func TestLedgerSignTyped3(t *testing.T) {
 	require.Equal(t, sigHex, "76984ce659f841975bdab7762ed9cb3c936791d1dcded3c0554147fca7accfdc543313669dcda04350990884e9e10c382fb20b722c123409a97c42ef6df617ca1c")
 }
 
-func CreateTx(
+func createTx(
 	nonce uint64,
 	to string,
 	gas uint64,
