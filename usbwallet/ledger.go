@@ -272,13 +272,15 @@ func (w *ledgerDriver) ledgerDerive(derivationPath gethaccounts.DerivationPath) 
 		return common.Address{}, nil, err
 	}
 
-	// Verify public key was returned
 	//#nosec G701 -- gosec will raise a warning on this integer conversion for potential overflow
-	if len(reply) < 1 || len(reply) < 1+int(reply[0]) {
+	replyFirstByteAsInt := int(reply[0])
+
+	// Verify public key was returned
+	if len(reply) < 1 || len(reply) < 1+replyFirstByteAsInt {
 		return common.Address{}, nil, errors.New("reply lacks public key entry")
 	}
 
-	pubkeyBz := reply[1 : 1+int(reply[0])]
+	pubkeyBz := reply[1 : 1+replyFirstByteAsInt]
 
 	publicKey, err := crypto.UnmarshalPubkey(pubkeyBz)
 	if err != nil {
@@ -286,15 +288,14 @@ func (w *ledgerDriver) ledgerDerive(derivationPath gethaccounts.DerivationPath) 
 	}
 
 	// Discard pubkey after fetching
-	reply = reply[1+int(reply[0]):]
+	reply = reply[1+replyFirstByteAsInt:]
 
 	// Extract the Ethereum hex address string
-	if len(reply) < 1 || len(reply) < 1+int(reply[0]) {
+	if len(reply) < 1 || len(reply) < 1+replyFirstByteAsInt {
 		return common.Address{}, nil, errors.New("reply lacks address entry")
 	}
 
-	//#nosec G701 -- gosec will raise a warning on this integer conversion for potential overflow
-	hexStr := reply[1 : 1+int(reply[0])]
+	hexStr := reply[1 : 1+replyFirstByteAsInt]
 
 	// Decode the hex string into an Ethereum address and return
 	var address common.Address
