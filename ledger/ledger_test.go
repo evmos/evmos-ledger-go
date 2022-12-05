@@ -19,24 +19,17 @@ func init() {
 
 func (suite *LedgerTestSuite) TestSignatures() {
 	testCases := []struct {
-		name         string
-		registerMock func()
-		tx           []byte
-		expPass      bool
+		name    string
+		tx      []byte
+		expPass bool
 	}{
 		{
 			"pass - test ledger amino signature",
-			func() {
-				RegisterSignSECP256K1(suite.mockLedger, accounts.DefaultBaseDerivationPath, suite.txAmino)
-			},
 			suite.txAmino,
 			true,
 		},
 		{
 			"pass - test ledger protobuf signature",
-			func() {
-				RegisterSignSECP256K1(suite.mockLedger, accounts.DefaultBaseDerivationPath, suite.txProtobuf)
-			},
 			suite.txProtobuf,
 			true,
 		},
@@ -45,8 +38,6 @@ func (suite *LedgerTestSuite) TestSignatures() {
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
 			suite.SetupTest() // reset
-			tc.registerMock()
-
 			_, err := suite.ledger.SignSECP256K1(accounts.DefaultBaseDerivationPath, tc.tx)
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -59,18 +50,13 @@ func (suite *LedgerTestSuite) TestSignatures() {
 
 func (suite *LedgerTestSuite) TestSignatureEquivalence() {
 	testCases := []struct {
-		name         string
-		registerMock func()
-		txProtobuf   []byte
-		txAmino      []byte
-		expPass      bool
+		name       string
+		txProtobuf []byte
+		txAmino    []byte
+		expPass    bool
 	}{
 		{
 			"pass - signatures are equivalent",
-			func() {
-				RegisterSignSECP256K1(suite.mockLedger, accounts.DefaultBaseDerivationPath, suite.txProtobuf)
-				RegisterSignSECP256K1(suite.mockLedger, accounts.DefaultBaseDerivationPath, suite.txAmino)
-			},
 			suite.txProtobuf,
 			suite.txAmino,
 			true,
@@ -80,8 +66,6 @@ func (suite *LedgerTestSuite) TestSignatureEquivalence() {
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
 			suite.SetupTest() // reset
-			tc.registerMock()
-
 			protoSignature, err := suite.ledger.SignSECP256K1(accounts.DefaultBaseDerivationPath, tc.txProtobuf)
 			suite.Require().NoError(err)
 			aminoSignature, err := suite.ledger.SignSECP256K1(accounts.DefaultBaseDerivationPath, tc.txAmino)
@@ -97,15 +81,11 @@ func (suite *LedgerTestSuite) TestSignatureEquivalence() {
 
 func (suite *LedgerTestSuite) TestGetLedgerAddress() {
 	testCases := []struct {
-		name         string
-		registerMock func()
-		expPass      bool
+		name    string
+		expPass bool
 	}{
 		{
 			"pass - get ledger address",
-			func() {
-				RegisterGetAddressPubKeySECP256K1(suite.mockLedger, suite.pubKey, accounts.DefaultBaseDerivationPath, "evmos")
-			},
 			true,
 		},
 	}
@@ -113,7 +93,6 @@ func (suite *LedgerTestSuite) TestGetLedgerAddress() {
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
 			suite.SetupTest() // reset
-			tc.registerMock()
 
 			pubkey, addr, err := suite.ledger.GetAddressPubKeySECP256K1(accounts.DefaultBaseDerivationPath, "evmos")
 			suite.Require().NoError(err, "Could not get wallet address")
