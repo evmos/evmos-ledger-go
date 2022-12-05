@@ -32,7 +32,6 @@ import (
 type Account struct {
 	Address   common.Address   `json:"address"`   // Ethereum account address derived from the key
 	PublicKey *ecdsa.PublicKey `json:"publicKey"` // Public key corresponding to the account address
-	URL       gethaccounts.URL `json:"url"`       // Optional resource locator within a backend
 }
 
 // Wallet represents a software or hardware wallet that might contain one or more
