@@ -273,7 +273,7 @@ func (w *ledgerDriver) ledgerDerive(derivationPath gethaccounts.DerivationPath) 
 	}
 
 	// Verify public key was returned
-	//#nosec G109 -- gosec will raise a warning on this integer conversion for potential overflow
+	//#nosec G701 -- gosec will raise a warning on this integer conversion for potential overflow
 	if len(reply) < 1 || len(reply) < 1+int(reply[0]) {
 		return common.Address{}, nil, errors.New("reply lacks public key entry")
 	}
@@ -293,7 +293,7 @@ func (w *ledgerDriver) ledgerDerive(derivationPath gethaccounts.DerivationPath) 
 		return common.Address{}, nil, errors.New("reply lacks address entry")
 	}
 
-	//#nosec G109 -- gosec will raise a warning on this integer conversion for potential overflow
+	//#nosec G701 -- gosec will raise a warning on this integer conversion for potential overflow
 	hexStr := reply[1 : 1+int(reply[0])]
 
 	// Decode the hex string into an Ethereum address and return
@@ -547,7 +547,7 @@ func (w *ledgerDriver) ledgerExchange(opcode ledgerOpcode, p1 ledgerParam1, p2 l
 	// Construct the message payload, possibly split into multiple chunks
 	apdu := make([]byte, 2, 7+len(data))
 
-	//#nosec G109 -- gosec will raise a warning on this integer conversion for potential overflow
+	//#nosec G701 -- gosec will raise a warning on this integer conversion for potential overflow
 	binary.BigEndian.PutUint16(apdu, uint16(5+len(data)))
 	apdu = append(apdu, []byte{0xe0, byte(opcode), byte(p1), byte(p2), byte(len(data))}...)
 	apdu = append(apdu, data...)
@@ -560,7 +560,7 @@ func (w *ledgerDriver) ledgerExchange(opcode ledgerOpcode, p1 ledgerParam1, p2 l
 	for i := 0; len(apdu) > 0; i++ {
 		// Construct the new message to stream
 		chunk = append(chunk[:0], header...)
-		//#nosec G109 -- gosec will raise a warning on this integer conversion for potential overflow
+		//#nosec G701 -- gosec will raise a warning on this integer conversion for potential overflow
 		binary.BigEndian.PutUint16(chunk[3:], uint16(i))
 
 		if len(apdu) > space {
@@ -592,7 +592,7 @@ func (w *ledgerDriver) ledgerExchange(opcode ledgerOpcode, p1 ledgerParam1, p2 l
 		var payload []byte
 
 		if chunk[3] == 0x00 && chunk[4] == 0x00 {
-			//#nosec G109 -- gosec will raise a warning on this integer conversion for potential overflow
+			//#nosec G701 -- gosec will raise a warning on this integer conversion for potential overflow
 			reply = make([]byte, 0, int(binary.BigEndian.Uint16(chunk[5:7])))
 			payload = chunk[7:]
 		} else {
