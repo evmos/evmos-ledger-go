@@ -130,7 +130,7 @@ func TestSanityCreateTx(t *testing.T) {
 	require.Equal(t, tx.To()[:], addrBytes)
 	require.Equal(t, tx.To().Hex(), addr)
 	require.Equal(t, *tx.Value(), *big.NewInt(10))
-	require.Equal(t, tx.Data(), []byte{})
+	require.Equal(t, tx.Data(), nil)
 }
 
 func TestInitWallet(t *testing.T) {
