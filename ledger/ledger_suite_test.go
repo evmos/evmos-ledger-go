@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/evmos/evmos-ledger-go/ledger"
+	"github.com/evmos/evmos-ledger-go/ledger/mocks"
 	"github.com/evmos/evmos-ledger-go/usbwallet"
 	"github.com/stretchr/testify/suite"
 	"testing"
@@ -42,10 +43,11 @@ func (suite *LedgerTestSuite) SetupTest() {
 
 	hub, err := usbwallet.NewLedgerHub()
 	suite.Require().NoError(err)
-	suite.ledger = ledger.EvmosSECP256K1{
-		Hub: hub,
-		//primaryWallet: NewWallet(suite.T()),
-	}
+	suite.ledger = ledger.EvmosSECP256K1{Hub: hub}
+
+	wallet := mocks.NewWallet(suite.T())
+	suite.ledger.SetPrimaryWallet(wallet)
+
 }
 
 func (suite *LedgerTestSuite) newPubKey(pk string) (res cryptoTypes.PubKey) {

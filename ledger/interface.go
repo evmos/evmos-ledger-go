@@ -1,6 +1,9 @@
 package ledger
 
+import "github.com/evmos/evmos-ledger-go/accounts"
+
 type SECP256K1 interface {
+	SetPrimaryWallet(wallet accounts.Wallet)
 	Close() error
 	// Returns an uncompressed pubkey
 	GetPublicKeySECP256K1([]uint32) ([]byte, error)

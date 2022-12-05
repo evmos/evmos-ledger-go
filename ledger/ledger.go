@@ -36,6 +36,10 @@ type EvmosSECP256K1 struct {
 	primaryWallet accounts.Wallet
 }
 
+func (e EvmosSECP256K1) SetPrimaryWallet(wallet accounts.Wallet) {
+	e.primaryWallet = wallet
+}
+
 // Closes the associated primary wallet. Any requests on
 // the object after a successful Close() should not work
 func (e EvmosSECP256K1) Close() error {
