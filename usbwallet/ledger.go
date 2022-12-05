@@ -107,7 +107,7 @@ func (w *ledgerDriver) offline() bool {
 // Open implements usbwallet.driver, attempting to initialize the connection to the
 // Ledger hardware wallet. The Ledger does not require a user passphrase, so that
 // parameter is silently discarded.
-func (w *ledgerDriver) Open(device io.ReadWriter, passphrase string) error {
+func (w *ledgerDriver) Open(device io.ReadWriter, _ string) error {
 	w.device, w.failure = device, nil
 
 	_, _, err := w.ledgerDerive(gethaccounts.DefaultBaseDerivationPath)
@@ -161,7 +161,6 @@ func (w *ledgerDriver) SignTx(path gethaccounts.DerivationPath, tx *coretypes.Tr
 	}
 	// Ensure the wallet is capable of signing the given transaction
 	if chainID != nil && w.version[0] <= 1 && w.version[1] <= 0 && w.version[2] <= 2 {
-		//lint:ignore ST1005 brand name displayed on the console
 		return common.Address{}, nil, fmt.Errorf("Ledger v%d.%d.%d doesn't support signing this transaction, please update to v1.0.3 at least", w.version[0], w.version[1], w.version[2])
 	}
 
@@ -185,7 +184,6 @@ func (w *ledgerDriver) SignTypedMessage(path gethaccounts.DerivationPath, domain
 	}
 	// Ensure the wallet is capable of signing the given transaction
 	if w.version[0] < 1 && w.version[1] < 5 {
-		//lint:ignore ST1005 brand name displayed on the console
 		return nil, fmt.Errorf("Ledger version >= 1.5.0 required for EIP-712 signing (found version v%d.%d.%d)", w.version[0], w.version[1], w.version[2])
 	}
 	// All infos gathered and metadata checks out, request signing
@@ -365,7 +363,9 @@ func (w *ledgerDriver) ledgerSign(derivationPath gethaccounts.DerivationPath, tx
 		return common.Address{}, nil, err
 	}
 
-	payload := append(path, txRLP...)
+	var payload []byte
+	payload = append(payload, path...)
+	payload = append(payload, txRLP...)
 
 	// Send the request and wait for the response
 	var (
@@ -396,7 +396,9 @@ func (w *ledgerDriver) ledgerSign(derivationPath gethaccounts.DerivationPath, tx
 		return common.Address{}, nil, errors.New("reply lacks signature")
 	}
 
-	signature := append(reply[1:], reply[0])
+	var signature []byte
+	signature = append(signature, reply[1:]...)
+	signature = append(signature, reply[0])
 
 	// Generate signature payload
 	r := signature[:crypto.DigestLength]
@@ -414,9 +416,13 @@ func (w *ledgerDriver) ledgerSign(derivationPath gethaccounts.DerivationPath, tx
 	} else {
 		recV = v - byte(chainID.Uint64()*2+35)
 	}
+	s = append(s, recV)
 
 	hash := crypto.Keccak256(txRLP)
-	sig := append(r[:], append(s[:], recV)...)
+
+	var sig []byte
+	sig = append(sig, r...)
+	sig = append(sig, s...)
 
 	pubKey, err := crypto.SigToPub(hash, sig)
 	if err != nil {
@@ -467,7 +473,9 @@ func (w *ledgerDriver) ledgerSignTypedMessage(derivationPath gethaccounts.Deriva
 		binary.BigEndian.PutUint32(path[1+4*i:], component)
 	}
 	// Create the 712 message
-	payload := append(path, domainHash...)
+	var payload []byte
+	payload = append(payload, path...)
+	payload = append(payload, domainHash...)
 	payload = append(payload, messageHash...)
 
 	// Send the request and wait for the response
@@ -488,7 +496,10 @@ func (w *ledgerDriver) ledgerSignTypedMessage(derivationPath gethaccounts.Deriva
 		return nil, errors.New("reply lacks signature")
 	}
 
-	signature := append(reply[1:], reply[0])
+	var signature []byte
+	signature = append(signature, reply[1:]...)
+	signature = append(signature, reply[0])
+
 	return signature, nil
 }
 
