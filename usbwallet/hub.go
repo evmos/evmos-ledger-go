@@ -18,10 +18,12 @@ package usbwallet
 
 import (
 	"errors"
-	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	//#nosec -- runtime is listed as a potential source for non-determinism, but we use it only for checking the OS
+	"runtime"
 
 	gethaccounts "github.com/ethereum/go-ethereum/accounts"
 	"github.com/evmos/evmos-ledger-go/accounts"
