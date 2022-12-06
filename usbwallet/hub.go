@@ -22,7 +22,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	//#nosec -- runtime is listed as a potential source for non-determinism, but we use it only for checking the OS
+	// runtime is listed as a potential source for non-determinism, but we use it only for checking the OS
+	// #nosec
 	"runtime"
 
 	gethaccounts "github.com/ethereum/go-ethereum/accounts"
@@ -225,7 +226,8 @@ func (hub *Hub) refreshWallets() {
 		}
 	}
 
-	hub.refreshed = time.Now()
+	// #nosec
+	hub.refreshed = time.Now().UTC()
 	hub.wallets = wallets
 	hub.stateLock.Unlock()
 }
