@@ -96,7 +96,7 @@ func (suite *LedgerTestSuite) TestSignatures() {
 				RegisterDerive(suite.mockWallet, addr, &privKey.PublicKey)
 				RegisterSignTypedDataError(suite.mockWallet, account, suite.txAmino)
 			},
-			true,
+			false,
 		},
 		{
 			"pass - test ledger amino signature",
