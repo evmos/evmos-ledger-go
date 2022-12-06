@@ -20,6 +20,42 @@ func init() {
 	eip712.SetEncodingConfig(config)
 }
 
+func (suite *LedgerTestSuite) TestClose() {
+	testCases := []struct {
+		name     string
+		mockFunc func()
+		expPass  bool
+	}{
+		{
+			"fail - can't find Ledger device",
+			func() {
+				suite.ledger.PrimaryWallet = nil
+			},
+			false,
+		},
+		{
+			"pass - wallet closed successfully",
+			func() {
+				RegisterClose(suite.mockWallet)
+			},
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			suite.SetupTest() // reset
+			tc.mockFunc()
+			err := suite.ledger.Close()
+			if tc.expPass {
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
 func (suite *LedgerTestSuite) TestSignatures() {
 	privKey, err := crypto.GenerateKey()
 	suite.Require().NoError(err)
@@ -43,15 +79,25 @@ func (suite *LedgerTestSuite) TestSignatures() {
 			},
 			false,
 		},
-		//{
-		//	"fail - unable to derive Ledger address",
-		//	suite.txAmino,
-		//	func() {
-		//		RegisterOpen(suite.mockWallet)
-		//		RegisterDeriveError(suite.mockWallet)
-		//	},
-		//	false,
-		//},
+		{
+			"fail - unable to derive Ledger address",
+			suite.txAmino,
+			func() {
+				RegisterOpen(suite.mockWallet)
+				RegisterDeriveError(suite.mockWallet)
+			},
+			false,
+		},
+		{
+			"fail - error generating signature",
+			suite.txAmino,
+			func() {
+				RegisterOpen(suite.mockWallet)
+				RegisterDerive(suite.mockWallet, addr, &privKey.PublicKey)
+				RegisterSignTypedDataError(suite.mockWallet, account, suite.txAmino)
+			},
+			true,
+		},
 		{
 			"pass - test ledger amino signature",
 			suite.txAmino,
@@ -135,9 +181,10 @@ func (suite *LedgerTestSuite) TestSignatureEquivalence() {
 	}
 }
 
-func (suite *LedgerTestSuite) TestGetLedgerAddress() {
+func (suite *LedgerTestSuite) TestGetAddressPubKeySECP256K1() {
 	privKey, err := crypto.GenerateKey()
 	suite.Require().NoError(err)
+
 	addr := crypto.PubkeyToAddress(privKey.PublicKey)
 	expAddr, err := sdk.Bech32ifyAddressBytes("evmos", common.HexToAddress(addr.String()).Bytes())
 	suite.Require().NoError(err)
@@ -155,6 +202,23 @@ func (suite *LedgerTestSuite) TestGetLedgerAddress() {
 			},
 		},
 		{
+			"fail - unable to derive Ledger address",
+			false,
+			func() {
+				RegisterOpen(suite.mockWallet)
+				RegisterDeriveError(suite.mockWallet)
+			},
+		},
+		{
+			"fail - bech32 prefix empty",
+			false,
+			func() {
+				suite.hrp = ""
+				RegisterOpen(suite.mockWallet)
+				RegisterDerive(suite.mockWallet, addr, &privKey.PublicKey)
+			},
+		},
+		{
 			"pass - get ledger address",
 			true,
 			func() {
@@ -168,7 +232,7 @@ func (suite *LedgerTestSuite) TestGetLedgerAddress() {
 		suite.Run(tc.name, func() {
 			suite.SetupTest() // reset
 			tc.mockFunc()
-			_, addr, err := suite.ledger.GetAddressPubKeySECP256K1(goethaccounts.DefaultBaseDerivationPath, "evmos")
+			_, addr, err := suite.ledger.GetAddressPubKeySECP256K1(goethaccounts.DefaultBaseDerivationPath, suite.hrp)
 			if tc.expPass {
 				suite.Require().NoError(err, "Could not get wallet address")
 				suite.Require().Equal(expAddr, addr)
@@ -179,7 +243,7 @@ func (suite *LedgerTestSuite) TestGetLedgerAddress() {
 	}
 }
 
-func (suite *LedgerTestSuite) TestGetPublicKeySECP256k1() {
+func (suite *LedgerTestSuite) TestGetPublicKeySECP256K1() {
 	privKey, err := crypto.GenerateKey()
 	suite.Require().NoError(err)
 	addr := crypto.PubkeyToAddress(privKey.PublicKey)
@@ -194,6 +258,14 @@ func (suite *LedgerTestSuite) TestGetPublicKeySECP256k1() {
 			false,
 			func() {
 				suite.ledger.PrimaryWallet = nil
+			},
+		},
+		{
+			"fail - unable to derive Ledger address",
+			false,
+			func() {
+				RegisterOpen(suite.mockWallet)
+				RegisterDeriveError(suite.mockWallet)
 			},
 		},
 		{

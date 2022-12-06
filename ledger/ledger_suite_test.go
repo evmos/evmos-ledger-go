@@ -33,6 +33,7 @@ type LedgerTestSuite struct {
 	ledger     ledger.EvmosSECP256K1
 	mockWallet *mocks.Wallet
 	account    accounts.Account
+	hrp        string
 }
 
 func TestLedgerTestSuite(t *testing.T) {
@@ -40,6 +41,8 @@ func TestLedgerTestSuite(t *testing.T) {
 }
 
 func (suite *LedgerTestSuite) SetupTest() {
+	suite.hrp = "evmos"
+
 	suite.txAmino = suite.getMockTxAmino()
 	suite.txProtobuf = suite.getMockTxProtobuf()
 
