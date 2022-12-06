@@ -3,12 +3,12 @@ module github.com/evmos/evmos-ledger-go
 go 1.19
 
 require (
-	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.46.6
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/evmos/ethereum-ledger-go v0.1.2
 	github.com/evmos/ethermint v0.20.0-rc3
 	github.com/stretchr/testify v1.8.1
+	github.com/zondax/hid v0.9.1-0.20220302062450-5552068d2266
 )
 
 require (
@@ -149,7 +149,6 @@ require (
 	github.com/tklauser/numcpus v0.4.0 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	github.com/ulikunitz/xz v0.5.8 // indirect
-	github.com/zondax/hid v0.9.1-0.20220302062450-5552068d2266 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/crypto v0.3.0 // indirect

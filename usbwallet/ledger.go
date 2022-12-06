@@ -27,13 +27,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math/big"
 
 	gethaccounts "github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
-	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
 )
 
 // ledgerOpcode is an enumeration encoding the supported Ledger opcodes.
@@ -149,32 +146,6 @@ func (w *ledgerDriver) Heartbeat() error {
 // and returning the Ethereum address located on that derivation path.
 func (w *ledgerDriver) Derive(path gethaccounts.DerivationPath) (common.Address, *ecdsa.PublicKey, error) {
 	return w.ledgerDerive(path)
-}
-
-// SignTx implements usbwallet.driver, sending the transaction to the Ledger and
-// waiting for the user to confirm or deny the transaction.
-//
-// Note, if the version of the Ethereum application running on the Ledger wallet is
-// too old to sign EIP-155 transactions, but such is requested nonetheless, an error
-// will be returned opposed to silently signing in Homestead mode.
-func (w *ledgerDriver) SignTx(path gethaccounts.DerivationPath, tx *coretypes.Transaction, chainID *big.Int) (common.Address, []byte, error) {
-	// If the Ethereum app doesn't run, abort
-	if w.offline() {
-		return common.Address{}, nil, gethaccounts.ErrWalletClosed
-	}
-	// Ensure the wallet is capable of signing the given transaction
-	if chainID != nil && w.version[0] <= 1 && w.version[1] <= 0 && w.version[2] <= 2 {
-		//nolint:stylecheck // ST1005 requires error strings to be lowercase but Ledger as a brand name should start with a capital letter
-		return common.Address{}, nil, fmt.Errorf("Ledger v%d.%d.%d doesn't support signing this transaction, please update to v1.0.3 at least", w.version[0], w.version[1], w.version[2])
-	}
-
-	// Allow chainID of zero to default to nil
-	if chainID.Cmp(common.Big0) == 0 {
-		chainID = nil
-	}
-
-	// All infos gathered and metadata checks out, request signing
-	return w.ledgerSign(path, tx, chainID)
 }
 
 // SignTypedMessage implements usbwallet.driver, sending the message to the Ledger and
@@ -309,141 +280,6 @@ func (w *ledgerDriver) ledgerDerive(derivationPath gethaccounts.DerivationPath) 
 	}
 
 	return address, publicKey, nil
-}
-
-// ledgerSign sends the transaction to the Ledger wallet, and waits for the user
-// to confirm or deny the transaction.
-//
-// The transaction signing protocol is defined as follows:
-//
-//	CLA | INS | P1 | P2 | Lc  | Le
-//	----+-----+----+----+-----+---
-//	 E0 | 04  | 00: first transaction data block
-//	            80: subsequent transaction data block
-//	               | 00 | variable | variable
-//
-// Where the input for the first transaction block (first 255 bytes) is:
-//
-//	Description                                      | Length
-//	-------------------------------------------------+----------
-//	Number of BIP 32 derivations to perform (max 10) | 1 byte
-//	First derivation index (big endian)              | 4 bytes
-//	...                                              | 4 bytes
-//	Last derivation index (big endian)               | 4 bytes
-//	RLP transaction chunk                            | arbitrary
-//
-// And the input for subsequent transaction blocks (first 255 bytes) are:
-//
-//	Description           | Length
-//	----------------------+----------
-//	RLP transaction chunk | arbitrary
-//
-// And the output data is:
-//
-//	Description | Length
-//	------------+---------
-//	signature V | 1 byte
-//	signature R | 32 bytes
-//	signature S | 32 bytes
-func (w *ledgerDriver) ledgerSign(derivationPath gethaccounts.DerivationPath, tx *coretypes.Transaction, chainID *big.Int) (common.Address, []byte, error) {
-	// Flatten the derivation path into the Ledger request
-	path := make([]byte, 1+4*len(derivationPath))
-	path[0] = byte(len(derivationPath))
-	for i, component := range derivationPath {
-		binary.BigEndian.PutUint32(path[1+4*i:], component)
-	}
-
-	// Create the transaction RLP based on whether legacy or EIP155 signing was requested
-	var (
-		txRLP  []byte
-		sigRLP []byte
-		err    error
-	)
-
-	// TODO: why can't we just use tx.MarshalBinary() instead?
-	if chainID == nil {
-		txRLP, err = rlp.EncodeToBytes([]interface{}{tx.Nonce(), tx.GasPrice(), tx.Gas(), tx.To(), tx.Value(), tx.Data()})
-	} else {
-		txRLP, err = rlp.EncodeToBytes([]interface{}{tx.Nonce(), tx.GasPrice(), tx.Gas(), tx.To(), tx.Value(), tx.Data(), chainID, big.NewInt(0), big.NewInt(0)})
-	}
-
-	if err != nil {
-		return common.Address{}, nil, err
-	}
-
-	var payload []byte
-	payload = append(payload, path...)
-	payload = append(payload, txRLP...)
-
-	// Send the request and wait for the response
-	var (
-		op    = ledgerP1InitTransactionData
-		reply []byte
-	)
-
-	for len(payload) > 0 {
-		// Calculate the size of the next data chunk
-		chunk := 255
-		if chunk > len(payload) {
-			chunk = len(payload)
-		}
-
-		// Send the chunk over, ensuring it's processed correctly
-		reply, err = w.ledgerExchange(ledgerOpSignTransaction, op, 0, payload[:chunk])
-		if err != nil {
-			return common.Address{}, nil, err
-		}
-
-		// Shift the payload and ensure subsequent chunks are marked as such
-		payload = payload[chunk:]
-		op = ledgerP1ContTransactionData
-	}
-
-	// Extract the Ethereum signature and do a sanity validation
-	if len(reply) != crypto.SignatureLength {
-		return common.Address{}, nil, errors.New("reply lacks signature")
-	}
-
-	var signature []byte
-	signature = append(signature, reply[1:]...)
-	signature = append(signature, reply[0])
-
-	// Generate signature payload
-	r := signature[:crypto.DigestLength]
-	s := signature[crypto.DigestLength:crypto.RecoveryIDOffset]
-	v := signature[crypto.RecoveryIDOffset]
-
-	if sigRLP, err = rlp.EncodeToBytes([]interface{}{tx.Nonce(), tx.GasPrice(), tx.Gas(), tx.To(), tx.Value(), tx.Data(), v, r, s}); err != nil {
-		return common.Address{}, nil, err
-	}
-
-	// Return address from signature to be verified later
-	var recV byte
-	if chainID == nil {
-		recV = v - byte(27)
-	} else {
-		recV = v - byte(chainID.Uint64()*2+35)
-	}
-	s = append(s, recV)
-
-	hash := crypto.Keccak256(txRLP)
-
-	var sig []byte
-	sig = append(sig, r...)
-	sig = append(sig, s...)
-
-	pubKey, err := crypto.SigToPub(hash, sig)
-	if err != nil {
-		return common.Address{}, nil, err
-	}
-
-	sender := crypto.PubkeyToAddress(*pubKey)
-
-	// copy address
-	var addr common.Address
-	copy(addr[:], sender.Bytes())
-
-	return addr, sigRLP, nil
 }
 
 // ledgerSignTypedMessage sends the transaction to the Ledger wallet, and waits for the user

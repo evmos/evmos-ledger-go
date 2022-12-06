@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	sdkledger "github.com/cosmos/cosmos-sdk/crypto/ledger"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 
@@ -17,17 +17,17 @@ import (
 )
 
 // Secp256k1DerivationFn defines the derivation function used on the Cosmos SDK Keyring.
-type Secp256k1DerivationFn func() (SECP256K1, error)
+type Secp256k1DerivationFn func() (sdkledger.SECP256K1, error)
 
 func EvmosLedgerDerivation() Secp256k1DerivationFn {
 	evmosSECP256K1 := new(EvmosSECP256K1)
 
-	return func() (SECP256K1, error) {
+	return func() (sdkledger.SECP256K1, error) {
 		return evmosSECP256K1.connectToLedgerApp()
 	}
 }
 
-var _ SECP256K1 = &EvmosSECP256K1{}
+var _ sdkledger.SECP256K1 = &EvmosSECP256K1{}
 
 // EvmosSECP256K1 defines a wrapper of the Ethereum App for compatibility with Cosmos SDK chains.
 type EvmosSECP256K1 struct {
@@ -147,7 +147,7 @@ func (e EvmosSECP256K1) displayEIP712Hash(typedData apitypes.TypedData) error {
 	return nil
 }
 
-func (e *EvmosSECP256K1) connectToLedgerApp() (SECP256K1, error) {
+func (e *EvmosSECP256K1) connectToLedgerApp() (sdkledger.SECP256K1, error) {
 	// Instantiate new Ledger object
 	ledger, err := usbwallet.NewLedgerHub()
 	if err != nil {
