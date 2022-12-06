@@ -3,6 +3,8 @@ package ledger_test
 import (
 	"encoding/hex"
 	"fmt"
+	gethaccounts "github.com/ethereum/go-ethereum/accounts"
+	"github.com/evmos/evmos-ledger-go/accounts"
 	"github.com/evmos/evmos-ledger-go/ledger"
 	"github.com/evmos/evmos-ledger-go/ledger/mocks"
 	"github.com/evmos/evmos-ledger-go/usbwallet"
@@ -25,11 +27,12 @@ import (
 
 type LedgerTestSuite struct {
 	suite.Suite
-	pubKey                cryptoTypes.PubKey
-	txAmino               []byte
-	txProtobuf            []byte
-	ledger                ledger.SECP256K1
-	secp256k1DerivationFn *ledger.Secp256k1DerivationFn
+	pubKey     cryptoTypes.PubKey
+	txAmino    []byte
+	txProtobuf []byte
+	ledger     ledger.EvmosSECP256K1
+	mockWallet *mocks.Wallet
+	account    accounts.Account
 }
 
 func TestLedgerTestSuite(t *testing.T) {
@@ -37,17 +40,31 @@ func TestLedgerTestSuite(t *testing.T) {
 }
 
 func (suite *LedgerTestSuite) SetupTest() {
-	suite.pubKey = suite.newPubKey("045f53cbc346997423fe843e2ee6d24fd7832211000a65975ba81d53c87ad1e5c863a5adb3cb919014903f13a68c9a4682b56ff5df3db888a2cbc3dc8fae1ec0fb")
 	suite.txAmino = suite.getMockTxAmino()
 	suite.txProtobuf = suite.getMockTxProtobuf()
 
 	hub, err := usbwallet.NewLedgerHub()
 	suite.Require().NoError(err)
-	suite.ledger = ledger.EvmosSECP256K1{Hub: hub}
 
-	wallet := mocks.NewWallet(suite.T())
-	suite.ledger.SetPrimaryWallet(wallet)
+	mockWallet := new(mocks.Wallet)
+	suite.mockWallet = mockWallet
+	suite.ledger = ledger.EvmosSECP256K1{Hub: hub, PrimaryWallet: mockWallet}
 
+}
+
+func (suite *LedgerTestSuite) initWallet(path gethaccounts.DerivationPath, ledger *usbwallet.Hub) (accounts.Wallet, accounts.Account) {
+	suite.T().Helper()
+
+	suite.Require().NotZero(len(ledger.Wallets()))
+
+	wallet := ledger.Wallets()[0]
+	err := wallet.Open("")
+	suite.Require().NoError(err)
+
+	account, err := wallet.Derive(path, true)
+	suite.Require().NoError(err)
+
+	return wallet, account
 }
 
 func (suite *LedgerTestSuite) newPubKey(pk string) (res cryptoTypes.PubKey) {
