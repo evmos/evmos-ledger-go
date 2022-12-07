@@ -243,7 +243,7 @@ func (w *ledgerDriver) ledgerDerive(derivationPath gethaccounts.DerivationPath) 
 		return common.Address{}, nil, err
 	}
 
-	//#nosec G701 -- gosec will raise a warning on this integer conversion for potential overflow
+	// #nosec G701 -- gosec will raise a warning on this integer conversion for potential overflow
 	replyFirstByteAsInt := int(reply[0])
 
 	// Verify public key was returned

@@ -7,6 +7,8 @@ require (
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/evmos/ethereum-ledger-go v0.1.2
 	github.com/evmos/ethermint v0.20.0-rc3
+	github.com/onsi/ginkgo/v2 v2.5.1
+	github.com/onsi/gomega v1.24.1
 	github.com/stretchr/testify v1.8.1
 	github.com/zondax/hid v0.9.1-0.20220302062450-5552068d2266
 )
@@ -64,6 +66,7 @@ require (
 	github.com/go-kit/kit v0.12.0 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
+	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
@@ -138,6 +141,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.14.0 // indirect
 	github.com/status-im/keycard-go v0.0.0-20200402102358-957c09536969 // indirect
+	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
 	github.com/tendermint/btcd v0.1.1 // indirect

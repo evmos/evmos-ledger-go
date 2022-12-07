@@ -29,33 +29,34 @@ func EvmosLedgerDerivation() Secp256k1DerivationFn {
 
 var _ sdkledger.SECP256K1 = &EvmosSECP256K1{}
 
-// EvmosSECP256K1 defines a wrapper of the Ethereum App for compatibility with Cosmos SDK chains.
+// EvmosSECP256K1 defines a wrapper of the Ethereum App to
+// for compatibility with Cosmos SDK chains.
 type EvmosSECP256K1 struct {
 	*usbwallet.Hub
-	primaryWallet accounts.Wallet
+	PrimaryWallet accounts.Wallet
 }
 
-// Close is a wrapper method to close the associated primary wallet.
-// Any requests on the object after a successful Close() should not work.
+// Close closes the associated primary wallet. Any requests on
+// the object after a successful Close() should not work
 func (e EvmosSECP256K1) Close() error {
-	if e.primaryWallet == nil {
+	if e.PrimaryWallet == nil {
 		return errors.New("could not close Ledger: no wallet found")
 	}
 
-	return e.primaryWallet.Close()
+	return e.PrimaryWallet.Close()
 }
 
-// GetPublicKeySECP256K1 returns the public key associated with the address derived from
-// the provided hdPath using the primary wallet.
+// GetPublicKeySECP256K1 Return the public key associated with the address derived from
+// the provided hdPath using the primary wallet
 func (e EvmosSECP256K1) GetPublicKeySECP256K1(hdPath []uint32) ([]byte, error) {
-	if e.primaryWallet == nil {
+	if e.PrimaryWallet == nil {
 		return nil, errors.New("could not get Ledger public key: no wallet found")
 	}
 
 	// Re-open wallet in case it was closed. Do not handle the error here (see SignSECP256K1)
-	_ = e.primaryWallet.Open("")
+	_ = e.PrimaryWallet.Open("")
 
-	account, err := e.primaryWallet.Derive(hdPath, true)
+	account, err := e.PrimaryWallet.Derive(hdPath, true)
 	if err != nil {
 		return nil, errors.New("unable to derive public key, please retry")
 	}
@@ -68,14 +69,14 @@ func (e EvmosSECP256K1) GetPublicKeySECP256K1(hdPath []uint32) ([]byte, error) {
 // GetAddressPubKeySECP256K1 takes in the HD path as well as a "Human Readable Prefix" (HRP, e.g. "evmos")
 // to return the public key bytes in secp256k1 format as well as the account address.
 func (e EvmosSECP256K1) GetAddressPubKeySECP256K1(hdPath []uint32, hrp string) ([]byte, string, error) {
-	if e.primaryWallet == nil {
+	if e.PrimaryWallet == nil {
 		return nil, "", errors.New("could not get Ledger address: no wallet found")
 	}
 
 	// Re-open wallet in case it was closed. Ignore the error here (see SignSECP256K1)
-	_ = e.primaryWallet.Open("")
+	_ = e.PrimaryWallet.Open("")
 
-	account, err := e.primaryWallet.Derive(hdPath, true)
+	account, err := e.PrimaryWallet.Derive(hdPath, true)
 	if err != nil {
 		return nil, "", errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
 	}
@@ -95,16 +96,16 @@ func (e EvmosSECP256K1) GetAddressPubKeySECP256K1(hdPath []uint32, hrp string) (
 func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]byte, error) {
 	fmt.Printf("Generating payload, please check your Ledger...\n")
 
-	if e.primaryWallet == nil {
+	if e.PrimaryWallet == nil {
 		return nil, errors.New("unable to sign with Ledger: no wallet found")
 	}
 
 	// Re-open wallet in case it was closed. Since an error occurs if the wallet is already open,
 	// ignore the error. Any errors due to the wallet being closed will surface later on.
-	_ = e.primaryWallet.Open("")
+	_ = e.PrimaryWallet.Open("")
 
 	// Derive requested account
-	account, err := e.primaryWallet.Derive(hdPath, true)
+	account, err := e.PrimaryWallet.Derive(hdPath, true)
 	if err != nil {
 		return nil, errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
 	}
@@ -120,7 +121,7 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 	}
 
 	// Sign with EIP712 signature
-	signature, err := e.primaryWallet.SignTypedData(account, typedData)
+	signature, err := e.PrimaryWallet.SignTypedData(account, typedData)
 	if err != nil {
 		return nil, fmt.Errorf("error generating signature, please retry: %w", err)
 	}
@@ -174,7 +175,7 @@ func (e *EvmosSECP256K1) connectToLedgerApp() (sdkledger.SECP256K1, error) {
 		return nil, err
 	}
 
-	e.primaryWallet = primaryWallet
+	e.PrimaryWallet = primaryWallet
 
 	return e, nil
 }
