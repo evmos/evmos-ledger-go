@@ -226,7 +226,6 @@ func (hub *Hub) refreshWallets() {
 		}
 	}
 
-	// #nosec
 	hub.refreshed = time.Now().UTC()
 	hub.wallets = wallets
 	hub.stateLock.Unlock()
