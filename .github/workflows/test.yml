@@ -31,7 +31,6 @@ jobs:
             go.mod
             go.sum
       - name: Test and Create Coverage Report
-        # FIXME: make test-unit-cover fails 
         run: |
           make test-unit-cover
         if: env.GIT_DIFF
