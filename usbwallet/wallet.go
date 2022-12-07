@@ -187,7 +187,7 @@ func (w *wallet) heartbeat() {
 
 		if err != nil {
 			w.stateLock.Lock() // Lock state to tear the wallet down
-			//#nosec G104 -- ignoring the returned error on purpose here
+			//#nosec G703 -- ignoring the returned error on purpose here
 			_ = w.close()
 			w.stateLock.Unlock()
 		}
@@ -241,7 +241,7 @@ func (w *wallet) close() error {
 		return nil
 	}
 	// Close the device, clear everything, then return
-	//#nosec G104 -- ignoring the returned error on purpose here
+	//#nosec G703 -- ignoring the returned error on purpose here
 	_ = w.device.Close()
 	w.device = nil
 
