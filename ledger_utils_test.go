@@ -2,12 +2,7 @@ package ledger_test
 
 import (
 	"encoding/hex"
-	"fmt"
 	"testing"
-
-	"github.com/stretchr/testify/suite"
-
-	gethaccounts "github.com/ethereum/go-ethereum/accounts"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -18,11 +13,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	auxTx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-
+	gethaccounts "github.com/ethereum/go-ethereum/accounts"
 	"github.com/evmos/evmos-ledger-go/accounts"
 	"github.com/evmos/evmos-ledger-go/ledger"
 	"github.com/evmos/evmos-ledger-go/ledger/mocks"
 	"github.com/evmos/evmos-ledger-go/usbwallet"
+	"github.com/stretchr/testify/suite"
 )
 
 type LedgerTestSuite struct {
@@ -78,10 +74,8 @@ func (suite *LedgerTestSuite) newPubKey(pk string) (res cryptoTypes.PubKey) {
 	return pubkey
 }
 
-func (suite *LedgerTestSuite) getMockTxAmino() []byte {
-	tmp := fmt.Sprintf(
-		`{"account_number":"0","chain_id":"evmos_9000-1","fee":{"amount":[{"amount":"150","denom":"atom"}],"gas":"20000"},"memo":"memo","msgs":[{"type":"cosmos-sdk/MsgSend","value":{"amount":[{"amount":"150","denom":"atom"}],"from_address":"cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp","to_address":"cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a"}}],"sequence":"6"}`,
-	)
+func getFakeTxAmino() []byte {
+	tmp := `{"account_number":"0","chain_id":"evmos_9000-1","fee":{"amount":[{"amount":"150","denom":"atom"}],"gas":"20000"},"memo":"memo","msgs":[{"type":"cosmos-sdk/MsgSend","value":{"amount":[{"amount":"150","denom":"atom"}],"from_address":"cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp","to_address":"cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a"}}],"sequence":"6"}`
 
 	return []byte(tmp)
 }

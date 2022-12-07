@@ -19,20 +19,17 @@ package accounts
 
 import (
 	"crypto/ecdsa"
-	"math/big"
 
 	gethaccounts "github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
-	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 )
 
 // Account represents an Ethereum account located at a specific location defined
 // by the optional URL field.
 type Account struct {
-	Address   common.Address   `json:"address"` // Ethereum account address derived from the key
-	PublicKey *ecdsa.PublicKey `json:"publicKey"`
-	URL       gethaccounts.URL `json:"url"` // Optional resource locator within a backend
+	Address   common.Address   `json:"address"`   // Ethereum account address derived from the key
+	PublicKey *ecdsa.PublicKey `json:"publicKey"` // Public key corresponding to the account address
 }
 
 // Wallet represents a software or hardware wallet that might contain one or more
@@ -76,19 +73,6 @@ type Wallet interface {
 	// the specified derivation path. If requested, the derived account will be added
 	// to the wallet's tracked account list.
 	Derive(path gethaccounts.DerivationPath, pin bool) (Account, error)
-
-	// SignTx requests the wallet to sign the given transaction.
-	//
-	// It looks up the account specified either solely via its address contained within,
-	// or optionally with the aid of any location metadata from the embedded URL field.
-	//
-	// If the wallet requires additional authentication to sign the request (e.g.
-	// a password to decrypt the account, or a PIN code to verify the transaction),
-	// an AuthNeededError instance will be returned, containing infos for the user
-	// about which fields or actions are needed. The user may retry by providing
-	// the needed details via SignTxWithPassphrase, or by other means (e.g. unlock
-	// the account in a keystore).
-	SignTx(account Account, tx *coretypes.Transaction, chainID *big.Int) ([]byte, error)
 
 	// Sign a TypedData object using EIP-712 encoding
 	SignTypedData(account Account, typedData apitypes.TypedData) ([]byte, error)

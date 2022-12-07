@@ -23,13 +23,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math/big"
 	"sync"
 	"time"
 
 	gethaccounts "github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
-	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"github.com/evmos/evmos-ledger-go/accounts"
@@ -62,10 +60,8 @@ type driver interface {
 	// address located on that path.
 	Derive(path gethaccounts.DerivationPath) (common.Address, *ecdsa.PublicKey, error)
 
-	// SignTx sends the transaction to the USB device and waits for the user to confirm
+	// SignTypedMessage sends the message to the Ledger and waits for the user to sign
 	// or deny the transaction.
-	SignTx(path gethaccounts.DerivationPath, tx *coretypes.Transaction, chainID *big.Int) (common.Address, []byte, error)
-
 	SignTypedMessage(path gethaccounts.DerivationPath, messageHash []byte, domainHash []byte) ([]byte, error)
 }
 
@@ -302,7 +298,6 @@ func (w *wallet) Derive(path gethaccounts.DerivationPath, pin bool) (accounts.Ac
 	account := accounts.Account{
 		Address:   address,
 		PublicKey: publicKey,
-		URL:       gethaccounts.URL{Scheme: w.url.Scheme, Path: fmt.Sprintf("%s/%s", w.url.Path, path)},
 	}
 	if !pin {
 		return account, nil
@@ -376,54 +371,6 @@ func (w *wallet) signData(account accounts.Account, mimeType string, data []byte
 		return nil, err
 	}
 	return signature, nil
-}
-
-// SignTx implements accounts.Wallet. It sends the transaction over to the Ledger
-// wallet to request a confirmation from the user. It returns either the signed
-// transaction or a failure if the user denied the transaction.
-//
-// Note, if the version of the Ethereum application running on the Ledger wallet is
-// too old to sign EIP-155 transactions, but such is requested nonetheless, an error
-// will be returned opposed to silently signing in Homestead mode.
-func (w *wallet) SignTx(account accounts.Account, tx *coretypes.Transaction, chainID *big.Int) ([]byte, error) {
-	w.stateLock.RLock() // Comms have own mutex, this is for the state fields
-	defer w.stateLock.RUnlock()
-
-	// If the wallet is closed, abort
-	if w.device == nil {
-		return nil, gethaccounts.ErrWalletClosed
-	}
-	// Make sure the requested account is contained within
-	path, ok := w.paths[account.Address]
-	if !ok {
-		return nil, gethaccounts.ErrUnknownAccount
-	}
-	// All infos gathered and metadata checks out, request signing
-	<-w.commsLock
-	defer func() { w.commsLock <- struct{}{} }()
-
-	// Ensure the device isn't screwed with while user confirmation is pending
-	// TODO(karalabe): remove if hotplug lands on Windows
-	w.hub.commsLock.Lock()
-	w.hub.commsPend++
-	w.hub.commsLock.Unlock()
-
-	defer func() {
-		w.hub.commsLock.Lock()
-		w.hub.commsPend--
-		w.hub.commsLock.Unlock()
-	}()
-	// Sign the transaction and verify the sender to avoid hardware fault surprises
-	sender, signed, err := w.driver.SignTx(path, tx, chainID)
-	if err != nil {
-		return nil, err
-	}
-
-	if sender != account.Address {
-		return nil, fmt.Errorf("signer mismatch: expected %s, got %s", account.Address, sender)
-	}
-
-	return signed, nil
 }
 
 func (w *wallet) verifyTypedDataSignature(account accounts.Account, rawData []byte, signature []byte) error {
