@@ -114,6 +114,13 @@ test-unit: TEST_PACKAGES=$(PACKAGES_UNIT)
 
 test-unit-cover: ARGS=-timeout=15m go $(TEST_PACKAGES) -coverprofile=coverage.txt -covermode=atomic
 
+$(TEST_TARGETS): run-tests
+run-tests:
+ifneq (,$(shell which tparse 2>/dev/null))
+	go test -mod=readonly -json $(ARGS) $(EXTRA_ARGS) $(TEST_PACKAGES) | tparse
+else
+	go test -mod=readonly $(ARGS)  $(EXTRA_ARGS) $(TEST_PACKAGES)
+endif
 
 .PHONY: run-tests test test-all test-import test-rpc $(TEST_TARGETS)
 
