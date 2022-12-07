@@ -1,6 +1,7 @@
 package ledger_test
 
 import (
+	"github.com/evmos/evmos-ledger-go/ledger"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -23,6 +24,33 @@ import (
 func init() {
 	config := encoding.MakeConfig(app.ModuleBasics)
 	eip712.SetEncodingConfig(config)
+}
+
+func (suite *LedgerTestSuite) TestEvmosLedgerDerivation() {
+	testCases := []struct {
+		name     string
+		mockFunc func()
+		expPass  bool
+	}{
+		{
+			"fail - no hardware wallets detected",
+			func() {},
+			false,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			suite.SetupTest() // reset
+			derivationFunc := ledger.EvmosLedgerDerivation()
+			_, err := derivationFunc()
+			if tc.expPass {
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
 }
 
 func (suite *LedgerTestSuite) TestClose() {
