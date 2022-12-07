@@ -39,7 +39,7 @@ func TestLedgerTestSuite(t *testing.T) {
 func (suite *LedgerTestSuite) SetupTest() {
 	suite.hrp = "evmos"
 
-	suite.txAmino = suite.getMockTxAmino()
+	// suite.txAmino = suite.getMockTxAmino()
 	suite.txProtobuf = suite.getMockTxProtobuf()
 
 	hub, err := usbwallet.NewLedgerHub()
@@ -48,6 +48,8 @@ func (suite *LedgerTestSuite) SetupTest() {
 	mockWallet := new(mocks.Wallet)
 	suite.mockWallet = mockWallet
 	suite.ledger = ledger.EvmosSECP256K1{Hub: hub, PrimaryWallet: mockWallet}
+	_, err = ledger.EvmosLedgerDerivation()()
+	suite.Require().NoError(err)
 }
 
 func (suite *LedgerTestSuite) initWallet(path gethaccounts.DerivationPath, ledger *usbwallet.Hub) (accounts.Wallet, accounts.Account) {
