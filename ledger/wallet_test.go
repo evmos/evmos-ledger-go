@@ -10,11 +10,6 @@ import (
 	"github.com/evmos/evmos-ledger-go/ledger/mocks"
 )
 
-func RegisterDeriveBadAccount(mockWallet *mocks.Wallet) {
-	mockWallet.On("Derive", gethaccounts.DefaultBaseDerivationPath, true).
-		Return(accounts.Account{}, nil)
-}
-
 func RegisterDerive(mockWallet *mocks.Wallet, addr common.Address, publicKey *ecdsa.PublicKey) {
 	mockWallet.On("Derive", gethaccounts.DefaultBaseDerivationPath, true).
 		Return(accounts.Account{Address: addr, PublicKey: publicKey}, nil)
