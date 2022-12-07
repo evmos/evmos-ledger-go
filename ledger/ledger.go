@@ -19,6 +19,14 @@ import (
 // Secp256k1DerivationFn defines the derivation function used on the Cosmos SDK Keyring.
 type Secp256k1DerivationFn func() (sdkledger.SECP256K1, error)
 
+func EvmosLedgerDerivation() Secp256k1DerivationFn {
+	evmosSECP256K1 := new(EvmosSECP256K1)
+
+	return func() (sdkledger.SECP256K1, error) {
+		return evmosSECP256K1.connectToLedgerApp()
+	}
+}
+
 var _ sdkledger.SECP256K1 = &EvmosSECP256K1{}
 
 // EvmosSECP256K1 defines a wrapper of the Ethereum App to
@@ -138,6 +146,38 @@ func (e EvmosSECP256K1) displayEIP712Hash(typedData apitypes.TypedData) error {
 	fmt.Printf("- Message: %s\n", bytesToHexString(typedDataHash))
 
 	return nil
+}
+
+func (e *EvmosSECP256K1) connectToLedgerApp() (sdkledger.SECP256K1, error) {
+	// Instantiate new Ledger object
+	ledger, err := usbwallet.NewLedgerHub()
+	if err != nil {
+		return nil, err
+	}
+
+	if ledger == nil {
+		return nil, errors.New("no hardware wallets detected")
+	}
+
+	e.Hub = ledger
+	wallets := e.Wallets()
+
+	// No wallets detected; throw an error
+	if len(wallets) == 0 {
+		return nil, errors.New("no hardware wallets detected")
+	}
+
+	// Default to use first wallet found
+	primaryWallet := wallets[0]
+
+	// Open wallet for the first time. Unlike with other cases, we want to handle the error here.
+	if err := primaryWallet.Open(""); err != nil {
+		return nil, err
+	}
+
+	e.PrimaryWallet = primaryWallet
+
+	return e, nil
 }
 
 // bytesToHexString is a helper function to convert a slice of bytes to a
