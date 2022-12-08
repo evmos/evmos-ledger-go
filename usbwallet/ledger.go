@@ -261,6 +261,9 @@ func (w *ledgerDriver) ledgerDerive(derivationPath gethaccounts.DerivationPath) 
 	// Discard pubkey after fetching
 	reply = reply[1+replyFirstByteAsInt:]
 
+	// Reset first byte
+	replyFirstByteAsInt = int(reply[0])
+
 	// Extract the Ethereum hex address string
 	if len(reply) < 1 || len(reply) < 1+replyFirstByteAsInt {
 		return common.Address{}, nil, errors.New("reply lacks address entry")
