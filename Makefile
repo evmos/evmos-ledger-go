@@ -112,7 +112,8 @@ TEST_TARGETS := test-unit test-unit-cover test-race
 test-unit: ARGS=-timeout=15m -race
 test-unit: TEST_PACKAGES=$(PACKAGES_UNIT)
 
-test-unit-cover: ARGS=-timeout=15m go $(TEST_PACKAGES) -coverprofile=coverage.txt -covermode=atomic
+test-unit-cover: ARGS=-timeout=15m -race -coverprofile=coverage.txt -covermode=atomic
+test-unit-cover: TEST_PACKAGES=$(PACKAGES_UNIT)
 
 $(TEST_TARGETS): run-tests
 run-tests:
