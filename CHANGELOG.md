@@ -36,3 +36,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 # Changelog
 
 ## Unreleased
+
+## [v0.2.0] - 2022-12-08
+
+### Improvements
+
+- (ci) [\#9](https://github.com/evmos/evmos-ledger-go/pull/9) Add workflows and setup files
+- (deps) [\#11](https://github.com/evmos/evmos-ledger-go/pull/11) Bump technote-space/get-diff-action from 6.1.1 to 6.1.2
+- (core) [\#8](https://github.com/evmos/evmos-ledger-go/pull/8) Deprecate ethereum-ledger-go components
+
