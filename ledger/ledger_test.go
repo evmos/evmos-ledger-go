@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	goethaccounts "github.com/ethereum/go-ethereum/accounts"
+	gethaccounts "github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
@@ -157,7 +157,7 @@ func (suite *LedgerTestSuite) TestSignatures() {
 		suite.Run(tc.name, func() {
 			suite.SetupTest() // reset
 			tc.mockFunc()
-			_, err := suite.ledger.SignSECP256K1(goethaccounts.DefaultBaseDerivationPath, tc.tx)
+			_, err := suite.ledger.SignSECP256K1(gethaccounts.DefaultBaseDerivationPath, tc.tx)
 			if tc.expPass {
 				suite.Require().NoError(err)
 			} else {
@@ -201,9 +201,9 @@ func (suite *LedgerTestSuite) TestSignatureEquivalence() {
 		suite.Run(tc.name, func() {
 			suite.SetupTest() // reset
 			tc.mockFunc()
-			protoSignature, err := suite.ledger.SignSECP256K1(goethaccounts.DefaultBaseDerivationPath, tc.txProtobuf)
+			protoSignature, err := suite.ledger.SignSECP256K1(gethaccounts.DefaultBaseDerivationPath, tc.txProtobuf)
 			suite.Require().NoError(err)
-			aminoSignature, err := suite.ledger.SignSECP256K1(goethaccounts.DefaultBaseDerivationPath, tc.txAmino)
+			aminoSignature, err := suite.ledger.SignSECP256K1(gethaccounts.DefaultBaseDerivationPath, tc.txAmino)
 			suite.Require().NoError(err)
 			if tc.expPass {
 				suite.Require().Equal(protoSignature, aminoSignature)
@@ -265,7 +265,7 @@ func (suite *LedgerTestSuite) TestGetAddressPubKeySECP256K1() {
 		suite.Run(tc.name, func() {
 			suite.SetupTest() // reset
 			tc.mockFunc()
-			_, addr, err := suite.ledger.GetAddressPubKeySECP256K1(goethaccounts.DefaultBaseDerivationPath, suite.hrp)
+			_, addr, err := suite.ledger.GetAddressPubKeySECP256K1(gethaccounts.DefaultBaseDerivationPath, suite.hrp)
 			if tc.expPass {
 				suite.Require().NoError(err, "Could not get wallet address")
 				suite.Require().Equal(expAddr, addr)
@@ -315,7 +315,7 @@ func (suite *LedgerTestSuite) TestGetPublicKeySECP256K1() {
 		suite.Run(tc.name, func() {
 			suite.SetupTest() // reset
 			tc.mockFunc()
-			pubKeyBz, err := suite.ledger.GetPublicKeySECP256K1(goethaccounts.DefaultBaseDerivationPath)
+			pubKeyBz, err := suite.ledger.GetPublicKeySECP256K1(gethaccounts.DefaultBaseDerivationPath)
 			if tc.expPass {
 				suite.Require().NoError(err, "Could not get wallet address")
 				suite.Require().Equal(expPubkeyBz, pubKeyBz)
@@ -343,7 +343,7 @@ func verifyTypedDataFields(t *testing.T, typedData apitypes.TypedData) {
 	chainId := typedData.Message["chain_id"]
 	require.Equal(t, "evmos_9000-1", chainId)
 
-	fee := (typedData.Message["fee"].(map[string]interface{}))
+	fee := typedData.Message["fee"].(map[string]interface{})
 	feePayer := fee["feePayer"]
 	require.Equal(t, "cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp", feePayer)
 

@@ -46,7 +46,7 @@ func (e EvmosSECP256K1) Close() error {
 	return e.PrimaryWallet.Close()
 }
 
-// GetPublicKeySECP256K1 Return the public key associated with the address derived from
+// GetPublicKeySECP256K1 returns the public key associated with the address derived from
 // the provided hdPath using the primary wallet
 func (e EvmosSECP256K1) GetPublicKeySECP256K1(hdPath []uint32) ([]byte, error) {
 	if e.PrimaryWallet == nil {

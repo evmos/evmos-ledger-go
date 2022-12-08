@@ -50,7 +50,7 @@ type Wallet interface {
 	// wallets and/or to access derivation seeds.
 	//
 	// The passphrase parameter may or may not be used by the implementation of a
-	// particular wallet instance. The reason there is no passwordless open method
+	// particular wallet instance. The reason there is no password-less open method
 	// is to strive towards a uniform wallet handling, oblivious to the different
 	// backend providers.
 	//
@@ -74,7 +74,7 @@ type Wallet interface {
 	// to the wallet's tracked account list.
 	Derive(path gethaccounts.DerivationPath, pin bool) (Account, error)
 
-	// Sign a TypedData object using EIP-712 encoding
+	// SignTypedData signs a TypedData object using EIP-712 encoding
 	SignTypedData(account Account, typedData apitypes.TypedData) ([]byte, error)
 }
 

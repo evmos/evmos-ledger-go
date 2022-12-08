@@ -2,7 +2,7 @@ package ledger_test
 
 import (
 	"encoding/hex"
-	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -79,8 +79,27 @@ func (suite *LedgerTestSuite) newPubKey(pk string) (res cryptoTypes.PubKey) {
 }
 
 func (suite *LedgerTestSuite) getMockTxAmino() []byte {
-	tmp := fmt.Sprintf(
-		`{"account_number":"0","chain_id":"evmos_9000-1","fee":{"amount":[{"amount":"150","denom":"atom"}],"gas":"20000"},"memo":"memo","msgs":[{"type":"cosmos-sdk/MsgSend","value":{"amount":[{"amount":"150","denom":"atom"}],"from_address":"cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp","to_address":"cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a"}}],"sequence":"6"}`,
+	whitespaceRegex := regexp.MustCompile(`\s+`)
+	tmp := whitespaceRegex.ReplaceAllString(
+		`{
+			"account_number": "0",
+			"chain_id":"evmos_9000-1",
+			"fee":{
+				"amount":[{"amount":"150","denom":"atom"}],
+				"gas":"20000"
+			},
+			"memo":"memo",
+			"msgs":[{
+				"type":"cosmos-sdk/MsgSend",
+				"value":{
+					"amount":[{"amount":"150","denom":"atom"}],
+					"from_address":"cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp",
+					"to_address":"cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a"
+				}
+			}],
+			"sequence":"6"
+		}`,
+		"",
 	)
 
 	return []byte(tmp)
@@ -105,7 +124,7 @@ func (suite *LedgerTestSuite) getMockTxProtobuf() []byte {
 	suite.Require().NoError(err)
 
 	body := &txTypes.TxBody{
-		Messages: [](*codecTypes.Any){
+		Messages: []*codecTypes.Any{
 			msgAsAny,
 		},
 		Memo: memo,
@@ -133,7 +152,7 @@ func (suite *LedgerTestSuite) getMockTxProtobuf() []byte {
 	fee := txTypes.Fee{Amount: types.NewCoins(types.NewInt64Coin("atom", 150)), GasLimit: 20000}
 
 	authInfo := &txTypes.AuthInfo{
-		SignerInfos: [](*txTypes.SignerInfo){signerInfo},
+		SignerInfos: []*txTypes.SignerInfo{signerInfo},
 		Fee:         &fee,
 	}
 
