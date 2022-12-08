@@ -27,12 +27,10 @@ import (
 
 type LedgerTestSuite struct {
 	suite.Suite
-	pubKey     cryptoTypes.PubKey
 	txAmino    []byte
 	txProtobuf []byte
 	ledger     ledger.EvmosSECP256K1
 	mockWallet *mocks.Wallet
-	account    accounts.Account
 	hrp        string
 }
 
