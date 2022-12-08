@@ -262,6 +262,7 @@ func (w *ledgerDriver) ledgerDerive(derivationPath gethaccounts.DerivationPath) 
 	reply = reply[1+replyFirstByteAsInt:]
 
 	// Reset first byte
+	// #nosec G701 -- gosec will raise a warning on this integer conversion for potential overflow
 	replyFirstByteAsInt = int(reply[0])
 
 	// Extract the Ethereum hex address string
