@@ -240,13 +240,14 @@ func (w *ledgerDriver) ledgerDerive(derivationPath gethaccounts.DerivationPath) 
 		return common.Address{}, nil, err
 	}
 
-	// #nosec G701 -- gosec will raise a warning on this integer conversion for potential overflow
-	replyFirstByteAsInt := int(reply[0])
-
 	// Verify public key was returned
-	if len(reply) < 1 || len(reply) < 1+replyFirstByteAsInt {
+	// #nosec G701 -- gosec will raise a warning on this integer conversion for potential overflow
+	if len(reply) < 1 || len(reply) < 1+int(reply[0]) {
 		return common.Address{}, nil, errors.New("reply lacks public key entry")
 	}
+
+	// #nosec G701 -- gosec will raise a warning on this integer conversion for potential overflow
+	replyFirstByteAsInt := int(reply[0])
 
 	pubkeyBz := reply[1 : 1+replyFirstByteAsInt]
 
@@ -258,14 +259,15 @@ func (w *ledgerDriver) ledgerDerive(derivationPath gethaccounts.DerivationPath) 
 	// Discard pubkey after fetching
 	reply = reply[1+replyFirstByteAsInt:]
 
-	// Reset first byte
-	// #nosec G701 -- gosec will raise a warning on this integer conversion for potential overflow
-	replyFirstByteAsInt = int(reply[0])
-
 	// Extract the Ethereum hex address string
-	if len(reply) < 1 || len(reply) < 1+replyFirstByteAsInt {
+	// #nosec G701 -- gosec will raise a warning on this integer conversion for potential overflow
+	if len(reply) < 1 || len(reply) < 1+int(reply[0]) {
 		return common.Address{}, nil, errors.New("reply lacks address entry")
 	}
+
+	// Reset first byte after discarding pubkey from response
+	// #nosec G701 -- gosec will raise a warning on this integer conversion for potential overflow
+	replyFirstByteAsInt = int(reply[0])
 
 	hexStr := reply[1 : 1+replyFirstByteAsInt]
 
