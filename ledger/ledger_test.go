@@ -5,11 +5,11 @@ import (
 	gethaccounts "github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/evmos/ethermint/app"
-	"github.com/evmos/ethermint/encoding"
-	"github.com/evmos/ethermint/ethereum/eip712"
 	"github.com/evmos/evmos-ledger-go/accounts"
 	"github.com/evmos/evmos-ledger-go/ledger"
+	"github.com/evmos/evmos/v11/app"
+	"github.com/evmos/evmos/v11/encoding"
+	"github.com/evmos/evmos/v11/ethereum/eip712"
 )
 
 // Test Mnemonic:
@@ -19,6 +19,7 @@ import (
 func init() {
 	config := encoding.MakeConfig(app.ModuleBasics)
 	eip712.SetEncodingConfig(config)
+	sdk.GetConfig().SetBech32PrefixForAccount("cosmos", "")
 }
 
 func (suite *LedgerTestSuite) TestEvmosLedgerDerivation() {
