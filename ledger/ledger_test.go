@@ -19,6 +19,7 @@ import (
 func init() {
 	config := encoding.MakeConfig(app.ModuleBasics)
 	eip712.SetEncodingConfig(config)
+	sdk.GetConfig().SetBech32PrefixForAccount("cosmos", "")
 }
 
 func (suite *LedgerTestSuite) TestEvmosLedgerDerivation() {

@@ -13,7 +13,7 @@ import (
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	"github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	txTypes "github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	auxTx "github.com/cosmos/cosmos-sdk/x/auth/tx"
@@ -108,12 +108,12 @@ func (suite *LedgerTestSuite) getMockTxProtobuf() []byte {
 
 	memo := "memo"
 	msg := bankTypes.NewMsgSend(
-		types.MustAccAddressFromBech32("cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp"),
-		types.MustAccAddressFromBech32("cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a"),
-		[]types.Coin{
+		sdk.MustAccAddressFromBech32("cosmos1r5sckdd808qvg7p8d0auaw896zcluqfd7djffp"),
+		sdk.MustAccAddressFromBech32("cosmos10t8ca2w09ykd6ph0agdz5stvgau47whhaggl9a"),
+		[]sdk.Coin{
 			{
 				Denom:  "atom",
-				Amount: types.NewIntFromUint64(150),
+				Amount: sdk.NewIntFromUint64(150),
 			},
 		},
 	)
@@ -147,7 +147,7 @@ func (suite *LedgerTestSuite) getMockTxProtobuf() []byte {
 		Sequence: 6,
 	}
 
-	fee := txTypes.Fee{Amount: types.NewCoins(types.NewInt64Coin("atom", 150)), GasLimit: 20000}
+	fee := txTypes.Fee{Amount: sdk.NewCoins(sdk.NewInt64Coin("atom", 150)), GasLimit: 20000}
 
 	authInfo := &txTypes.AuthInfo{
 		SignerInfos: []*txTypes.SignerInfo{signerInfo},
