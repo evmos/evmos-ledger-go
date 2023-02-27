@@ -6,7 +6,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.46.8
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/evmos/evmos/v11 v11.0.0-20230209000703-068762f0a69e
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	github.com/zondax/hid v0.9.1
 )
 
