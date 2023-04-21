@@ -2,7 +2,6 @@ package ledger
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -111,8 +110,7 @@ func (e EvmosSECP256K1) SignSECP256K1(hdPath []uint32, signDocBytes []byte) ([]b
 		return nil, errors.New("unable to derive Ledger address, please open the Ethereum app and retry")
 	}
 
-	// typedData, err := eip712.GetEIP712TypedDataForMsg(signDocBytes)
-	typedData, err := eip712.LegacyGetEIP712TypedDataForMsg(signDocBytes)
+	typedData, err := eip712.GetEIP712TypedDataForMsg(signDocBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -146,16 +144,6 @@ func (e EvmosSECP256K1) displayEIP712Hash(typedData apitypes.TypedData) error {
 	fmt.Printf("Signing the following payload with EIP-712:\n")
 	fmt.Printf("- Domain: %s\n", bytesToHexString(domainSeparator))
 	fmt.Printf("- Message: %s\n", bytesToHexString(typedDataHash))
-	fmt.Printf("%v\n", typedData.Message)
-
-	jsonBytes, err := json.Marshal(typedData.Message)
-	fmt.Printf("Message JSON: %v\n", jsonBytes)
-
-	jsonBytes, err = json.Marshal(typedData.Types)
-	fmt.Printf("Types JSON: %v\n", jsonBytes)
-
-	jsonBytes, err = json.Marshal(typedData.Domain)
-	fmt.Printf("Domain JSON: %v\n", jsonBytes)
 
 	return nil
 }
