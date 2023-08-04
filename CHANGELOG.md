@@ -40,6 +40,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Improvements
 
 - (ci) [\#66](https://github.com/evmos/evmos-ledger-go/pull/66) Bump go version to v1.20 and go linter version & config
+- (deps) [\#65](https://github.com/evmos/evmos-ledger-go/pull/65) Bump Evmos version to v14
 
 ## [v0.4.0] - 2023-04-21
 

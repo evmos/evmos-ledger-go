@@ -13,7 +13,7 @@ import (
 
 	"github.com/evmos/evmos-ledger-go/accounts"
 	"github.com/evmos/evmos-ledger-go/usbwallet"
-	"github.com/evmos/evmos/v13/ethereum/eip712"
+	"github.com/evmos/evmos/v14/ethereum/eip712"
 )
 
 // Secp256k1DerivationFn defines the derivation function used on the Cosmos SDK Keyring.
