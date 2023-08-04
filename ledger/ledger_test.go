@@ -7,9 +7,9 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/evmos/evmos-ledger-go/accounts"
 	"github.com/evmos/evmos-ledger-go/ledger"
-	"github.com/evmos/evmos/v13/app"
-	"github.com/evmos/evmos/v13/encoding"
-	"github.com/evmos/evmos/v13/ethereum/eip712"
+	"github.com/evmos/evmos/v14/app"
+	"github.com/evmos/evmos/v14/encoding"
+	"github.com/evmos/evmos/v14/ethereum/eip712"
 )
 
 // Test Mnemonic:
