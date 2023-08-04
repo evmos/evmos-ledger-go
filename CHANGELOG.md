@@ -45,6 +45,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 - (deps) [\#55](https://github.com/evmos/evmos-ledger-go/pull/55) Bump Evmos to v13
 
+## [v0.3.0-rc0] - 2023-03-13
+
+- (deps) [\#41](https://github.com/evmos/evmos-ledger-go/pull/41) Bump Evmos to v12
+
 ## [v0.2.1] - 2022-12-09
 - (core) [\#13](https://github.com/evmos/evmos-ledger-go/pull/13) Fix panic on Ledger derivation failure
 
