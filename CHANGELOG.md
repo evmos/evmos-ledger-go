@@ -35,7 +35,6 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
-
 ## [v0.5.0] - 2023-08-04
 
 ### Improvements
