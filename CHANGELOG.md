@@ -49,7 +49,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 - (deps) [\#41](https://github.com/evmos/evmos-ledger-go/pull/41) Bump Evmos to v12
 
+## [v0.2.2] - 2023-02-09
+
+- (core) [\#29](https://github.com/evmos/evmos-ledger-go/pull/29) Remove Ethermint dependency and migrate to Evmos
+
 ## [v0.2.1] - 2022-12-09
+
 - (core) [\#13](https://github.com/evmos/evmos-ledger-go/pull/13) Fix panic on Ledger derivation failure
 
 ## [v0.2.0] - 2022-12-08
