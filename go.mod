@@ -3,7 +3,7 @@ module github.com/evmos/evmos-ledger-go
 go 1.19
 
 require (
-	github.com/cosmos/cosmos-sdk v0.46.12
+	github.com/cosmos/cosmos-sdk v0.46.13
 	github.com/ethereum/go-ethereum v1.11.5
 	github.com/evmos/evmos/v14 v14.0.0-rc1.0.20230804122711-3220acb7a487
 	github.com/stretchr/testify v1.8.4
@@ -182,7 +182,7 @@ require (
 )
 
 replace (
-	github.com/cosmos/cosmos-sdk => github.com/evmos/cosmos-sdk v0.46.11-ledger
+	github.com/cosmos/cosmos-sdk => github.com/evmos/cosmos-sdk v0.46.13-alpha.ledger.8
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-	github.com/tendermint/tendermint => github.com/informalsystems/tendermint v0.34.25
+	github.com/tendermint/tendermint => github.com/cometbft/cometbft v0.34.29
 )
