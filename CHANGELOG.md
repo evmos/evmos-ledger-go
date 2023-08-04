@@ -37,6 +37,14 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### Improvements
+
+- (ci) [\#66](https://github.com/evmos/evmos-ledger-go/pull/66) Bump go version to v1.20 and go linter version & config
+
+## [v0.4.0] - 2023-04-21
+
+- (deps) [\#55](https://github.com/evmos/evmos-ledger-go/pull/55) Bump Evmos to v12
+
 ## [v0.2.1] - 2022-12-09
 - (core) [\#13](https://github.com/evmos/evmos-ledger-go/pull/13) Fix panic on Ledger derivation failure
 
