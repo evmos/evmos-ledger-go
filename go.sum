@@ -368,8 +368,8 @@ github.com/ethereum/go-ethereum v1.11.5 h1:3M1uan+LAUvdn+7wCEFrcMM4LJTeuxDrPTg/f
 github.com/ethereum/go-ethereum v1.11.5/go.mod h1:it7x0DWnTDMfVFdXcU6Ti4KEFQynLHVRarcSlPr0HBo=
 github.com/evmos/cosmos-sdk v0.46.13-alpha.ledger.8 h1:p9AwRznqpyI05vQpA2AAfzBNZCudb81+BBbjda/wd/c=
 github.com/evmos/cosmos-sdk v0.46.13-alpha.ledger.8/go.mod h1:EfY521ATNEla8eJ6oJuZBdgP5+p360s7InnRqX+TWdM=
-github.com/evmos/evmos/v14 v14.0.0-rc1.0.20230804122711-3220acb7a487 h1:u3czogmUFbOeQr1xsI9reic6Ow6uTeVeRYTCWvXzZHg=
-github.com/evmos/evmos/v14 v14.0.0-rc1.0.20230804122711-3220acb7a487/go.mod h1:G2vsioz8iS0GYKtYuYBfXkGT55WScMJG3VZplzC184o=
+github.com/evmos/evmos/v14 v14.0.0-rc1.0.20230804130823-14b27ff21a9f h1:JW6o/g3iC38LyHzBafEPmi/dsAAek7qtVCAbm+iUW1E=
+github.com/evmos/evmos/v14 v14.0.0-rc1.0.20230804130823-14b27ff21a9f/go.mod h1:G2vsioz8iS0GYKtYuYBfXkGT55WScMJG3VZplzC184o=
 github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c h1:8ISkoahWXwZR41ois5lSJBSVw4D0OV19Ht/JSTzvSv0=
 github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 h1:JWuenKqqX8nojtoVVWjGfOF9635RETekkoH6Cc9SX0A=
 github.com/facebookgo/subset v0.0.0-20200203212716-c811ad88dec4 h1:7HZCaLC5+BZpmbhCOZJ293Lz68O7PYrF2EzeiFMwCLk=
